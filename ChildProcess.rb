@@ -13,13 +13,14 @@ class ChildProcess
   attr_reader :pid
 
   # :call-seq:
-  #   ChildProcess.exec(command, *args) -> child
-  #   ChildProcess.exec(command, *args) {|child| ...}
+  #   exec(options, command, *args) -> child
+  #   exec(options, command, *args) {|child| ...}
   #
   # Run _command_ as a child process, passing it _args_.  If a block
-  # is given, automatically clean up _child_ at the end of the block.
-  def ChildProcess.exec(command, *args)
-    child = ChildProcess.new(command, *args)
+  # is given, automatically clean up _child_ at the end of the block.  See
+  # #new for a list of _options_.
+  def ChildProcess.exec(options, command, *args)
+    child = ChildProcess.new(options, command, *args)
     return child unless block_given?
     begin
       yield child
@@ -28,25 +29,35 @@ class ChildProcess
     end
   end
 
-  # Create a child process running _command_, passing it _args_.
-  def initialize(command, *args)
+  # Create a child process running _command_, passing it _args_.  Options
+  # include:
+  # +combine_output+:: Merge _out_ and _err_ into a single stream.
+  def initialize(options, command, *args)
     @waited = false
 
     # Open three pipes for our child's standard I/O.  This probably only
     # works on UNIX systems and Cygwin.
     child_in, @in = IO.pipe
     @out, child_out = IO.pipe
-    @err, child_err = IO.pipe
+    if options[:combine_output]
+      @err, child_err = nil, nil
+    else
+      @err, child_err = IO.pipe
+    end
     
     # Split off a child process to run the command.
     @pid = fork do
       # In the child process, close the parent's end of each pipe.
-      [@in, @out, @err].each {|f| f.close}
+      [@in, @out, @err].each {|f| f.close if f}
 
       # Rebind standard I/O for our child process.
       STDIN.reopen(child_in)
       STDOUT.reopen(child_out)
-      STDERR.reopen(child_err)
+      if options[:combine_output]
+        STDERR.reopen(child_out)
+      else
+        STDERR.reopen(child_err)
+      end
 
       # Replace the Ruby interpreter in the child process with a copy of
       # our command, keeping the same PID.  This call never returns, and
@@ -55,7 +66,7 @@ class ChildProcess
     end
 
     # In the parent process, close the child's end of each pipe.
-    [child_in, child_out, child_err].each {|f| f.close}
+    [child_in, child_out, child_err].each {|f| f.close if f}
   end
 
   # Wait for the child process to complete, and return a Process::Status
@@ -69,7 +80,7 @@ class ChildProcess
   # Close all I/O streams associated with the child process, and wait for
   # it to exit.
   def close
-    [@in, @out, @err].each {|f| f.close unless f.closed? }
+    [@in, @out, @err].each {|f| f.close if f && !f.closed? }
     wait unless @waited
   end
 end
