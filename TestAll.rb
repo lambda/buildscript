@@ -1,4 +1,4 @@
 require 'test/unit'
 require 'TestChildProcess'
-require 'TestBuilder'
-
+require 'TestReport'
+require 'TestBuild'

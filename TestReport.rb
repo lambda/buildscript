@@ -1,13 +1,11 @@
+require 'Report'
 require 'test/unit'
-require 'Builder'
 
 # Test our one-button build system.
-class TestBuilder < Test::Unit::TestCase
-  include Builder
-
+class TestReport < Test::Unit::TestCase
   # Called once for each test case.
   def setup
-    @report = Builder::Report.new(:silent => true)
+    @report = Report.new(:silent => true)
   end
 
   # Test basic report functions.
@@ -19,7 +17,7 @@ class TestBuilder < Test::Unit::TestCase
 
   # Make sure we raise errors when a build command fails.
   def test_command_failed
-    assert_raise(CommandFailed) { @report.run('nosuch') }
-    assert_raise(CommandFailed) { @report.run('cat', 'nosuch') }
+    assert_raise(Report::CommandFailed) { @report.run('nosuch') }
+    assert_raise(Report::CommandFailed) { @report.run('cat', 'nosuch') }
   end
 end
