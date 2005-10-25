@@ -1,10 +1,32 @@
 require 'ChildProcess'
+require 'BuildUtils'
 
 # A mini-language for describing one-button builds.
 module Builder
-
   # This exception is raised whenever a build fails.
   class CommandFailed < RuntimeError
+  end
+
+  # All the data associated with a build.
+  class Build
+    include BuildUtils
+
+    # Create a new Build. Options include:
+    #
+    # +build_dir+:: The directory to build into.  Will be deleted.
+    def initialize options
+      # Delete our build directory if it exists.  The recursive delete
+      # using Find was inspired by Sean Russell in ruby-talk 43478.
+      @build_dir = options[:build_dir]
+      if File.exists?(@build_dir)
+        countdown "Deleting #{@build_dir}"
+        rm_rf @build_dir
+      end
+      mkdir_p @build_dir
+
+      # Create a new report for this build.
+      @report = Report.new(:build_dir => @build_dir)
+    end
   end
 
   # A list of commands that have been run, and their output.
@@ -24,6 +46,7 @@ module Builder
 
     # Write a chunk of data to our report.
     def write data
+      # We store the text as a list so appending will be cheap.
       @text << data
       unless @silent
         print data 
