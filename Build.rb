@@ -5,6 +5,8 @@ require 'Report'
 # Implements a mini-language for describing one-button builds.
 class Build
   include BuildUtils
+
+  attr_reader :build_dir
   
   # Create a new Build. Options include:
   #
@@ -27,4 +29,35 @@ class Build
   def finish
     @report.close
   end
+
+  # See Report#heading.
+  def heading(str) @report.heading(str) end
+  # See Report#run.
+  def run(command, *args) @report.run(command, *args) end
 end
+
+# Support for an implicit, top-level Build object.
+#
+#   require 'Build'
+#   include BuildScript
+#
+#   start_build :build_dir => 'c:/build/myproject'
+#   heading 'Check out source code.'
+#   run 'cvs', 'co', 'MyProject'
+module BuildScript
+  include BuildUtils
+  
+  # Start a new build running. See #new for options.
+  def start_build options
+    $build = Build.new options
+    cd $build.build_dir
+  end
+
+  # See Report#heading.
+  def heading(str) $build.heading(str) end
+  # See Report#run.
+  def run(command, *args) $build.run(command, *args) end
+
+  module_function :start_build, :heading, :run
+end
+

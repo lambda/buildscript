@@ -32,11 +32,11 @@ class Report
     # We store the text as a list so appending will be cheap.
     @text << data
     unless @silent
-      print data 
+      $stdout.print data 
       $stdout.flush
     end
     if @report_file
-      print data
+      @report_file.print data
       @report_file.flush
     end
   end
