@@ -20,6 +20,11 @@ class Build
     mkdir_p @build_dir
     
     # Create a new report for this build.
-    @report = Report.new(:build_dir => @build_dir)
+    @report = Report.new(:dir => @build_dir)
+  end
+
+  # Finish the build, and close our report files.
+  def finish
+    @report.close
   end
 end

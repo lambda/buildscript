@@ -8,6 +8,10 @@ class TestReport < Test::Unit::TestCase
     @report = Report.new(:silent => true)
   end
 
+  def teardown
+    @report.close
+  end
+
   # Test basic report functions.
   def test_report
     @report.heading('Testing')

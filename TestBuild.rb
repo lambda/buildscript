@@ -11,11 +11,17 @@ class TestBuilder < Test::Unit::TestCase
 
   # This teardown is performed after each test method.
   def teardown
+    @build.finish
     FileUtils.rm_rf @tmpdir
-  end 
+  end
 
   # Make sure we create a build directory.
   def test_build_dir
     assert File.directory?(@tmpdir)
+  end
+
+  # Make sure we're getting a build report.
+  def test_build_report
+    assert File.exists?("#{@tmpdir}/BuildReport.txt")
   end
 end

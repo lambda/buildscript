@@ -1,3 +1,5 @@
+require 'ChildProcess'
+
 # A list of commands that have been run, and their output.
 class Report
   # This exception is raised whenever a command fails.
@@ -10,8 +12,16 @@ class Report
   def initialize options
     @silent = options[:silent]
     @text = []
+    if options[:dir]
+      @report_file = open("#{options[:dir]}/BuildReport.txt", "w")
+    end
   end
   
+  # Close our report.
+  def close
+    @report_file.close if @report_file
+  end
+
   # Add a new heading to the report.
   def heading str
     write ">>>>> #{str}\n"
@@ -24,6 +34,10 @@ class Report
     unless @silent
       print data 
       $stdout.flush
+    end
+    if @report_file
+      print data
+      @report_file.flush
     end
   end
   
