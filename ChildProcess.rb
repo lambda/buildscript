@@ -7,7 +7,7 @@ class ChildProcess
   attr_reader :in
   # The child's standard output.
   attr_reader :out
-  # The child's standard error.
+  # The child's standard error, or +nil+ if outputs are combined.
   attr_reader :err
   # The child's pid.
   attr_reader :pid
