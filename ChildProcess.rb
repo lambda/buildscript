@@ -1,3 +1,5 @@
+require 'assert'
+
 # A less-broken replacement for Ruby's miscellaneous _popen_, _Open3_, and
 # other modules for spawning child processes.  Works on Cygwin (and almost
 # certainly on real Unix systems), but probably does not work with a native
@@ -72,6 +74,7 @@ class ChildProcess
   # Wait for the child process to complete, and return a Process::Status
   # object.
   def wait
+    assert !@waited
     pid, status = Process.waitpid2(@pid)
     @waited = true
     status
