@@ -1,4 +1,3 @@
-require 'Find'
 require 'FileUtils'
 
 # Assorted functions which are helpful for a build.
@@ -12,7 +11,7 @@ module BuildUtils
   def countdown description
     STDERR.puts "#{description} in 5 seconds, Control-C to abort."
     (1..5).each do |i|
-      STDERR.print "\a" unless i > 3
+      STDERR.print "\a" unless i > 3 # Terminal bell.
       STDERR.print "[#{i}] "
       sleep 1
     end

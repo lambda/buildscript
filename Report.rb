@@ -9,6 +9,7 @@ class Report
   # Create a new Report.  Options include:
   #
   # +silent+:: Do not write report data to standard output.
+  # +dir+:: A directory in which test reports should be stored.
   def initialize options
     @silent = options[:silent]
     @text = []

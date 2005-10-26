@@ -1,3 +1,4 @@
+require 'forwardable'
 require 'ChildProcess'
 require 'BuildUtils'
 require 'Report'
@@ -5,17 +6,18 @@ require 'Report'
 # Implements a mini-language for describing one-button builds.
 class Build
   include BuildUtils
+  extend Forwardable
 
   attr_reader :build_dir
   
   # Create a new Build. Options include:
   #
   # +build_dir+:: The directory to build into.  Will be deleted.
+  # +dirty_build+:: If true, don't delete the build directory.
   def initialize options
-    # Delete our build directory if it exists.  The recursive delete
-    # using Find was inspired by Sean Russell in ruby-talk 43478.
+    # Delete our build directory if it exists.
     @build_dir = options[:build_dir]
-    if File.exists?(@build_dir)
+    if File.exists?(@build_dir) && !options[:dirty_build]
       countdown "Deleting #{@build_dir}"
       rm_rf @build_dir
     end
@@ -30,10 +32,9 @@ class Build
     @report.close
   end
 
-  # See Report#heading.
-  def heading(str) @report.heading(str) end
-  # See Report#run.
-  def run(command, *args) @report.run(command, *args) end
+  # Delegate _run_ and _heading_ to our @report member variable.  See
+  # Report for more information.
+  def_delegators :@report, :heading, :run
 end
 
 # Support for an implicit, top-level Build object.
@@ -52,6 +53,9 @@ module BuildScript
     $build = Build.new options
     cd $build.build_dir
   end
+
+  # I wonder if I can get this to work somehow?
+  #def_delegators :$build, :heading, :run
 
   # See Report#heading.
   def heading(str) $build.heading(str) end

@@ -1,13 +1,14 @@
 require 'Report'
 require 'test/unit'
 
-# Test our one-button build system.
+# Test our Report class.
 class TestReport < Test::Unit::TestCase
-  # Called once for each test case.
+  # Called once before running each test case.
   def setup
     @report = Report.new(:silent => true)
   end
 
+  # Called once after running each test case.
   def teardown
     @report.close
   end
