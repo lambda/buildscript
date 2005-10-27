@@ -12,14 +12,14 @@ def inno_setup_4 iss_file
   run 'c:/Program Files/Inno Setup 4/iscc', iss_file
 end
 
-# Launch Tamale and have it compile all the Scheme scripts in this
+# Launch Tamale and have it compile all the Scheme scripts in the current
 # directory.
 def compile_scheme_scripts
   run './Tamale', '-e', '(exit-script)', '.'
 end
 
 # Search through _dirs_ for files referenced in an Inno Setup script as
-# external install-time resources, and release them.
+# external install-time resources, and add them to our release list.
 def release_installer_support_files iss_file, *dirs
   # Figure out what files are available in dirs.  This code is fairly
   # fragile if you're trying to access network drives under Cygwin, which

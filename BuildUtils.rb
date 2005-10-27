@@ -1,10 +1,13 @@
 require 'FileUtils'
 require 'Find'
 
-# Assorted functions which are helpful for a build.  Many of these are used
-# by the Build class, so don't add any commands which depend on the Build
-# class.
+# Assorted functions which are helpful for a build.
 module BuildUtils
+  # Because this module is used by Build, it shouldn't contain any functions
+  # which depend on build.
+
+  # This module provides a full set of +cp+, +rm+ and other filesystem
+  # functions.
   include FileUtils
 
   # Give the user 5 seconds to abort the build before performing the

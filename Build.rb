@@ -10,9 +10,8 @@ class Build
   include BuildUtils
   extend Forwardable
 
-  # :nodoc: Holds information about a path which will be included in our
-  # release.
-  ReleaseInfo = Struct.new(:path, :options)
+  # Holds information about a path which will be included in our release.
+  ReleaseInfo = Struct.new(:path, :options) #:nodoc:
 
   # The directory in which this program will be built from scratch.
   attr_reader :build_dir
@@ -74,12 +73,21 @@ class Build
   end
 
   # Indicate that a file or directory should be included in our release.
+  #
+  # +subdir+:: Copy _path_ into the specified subdirectory of #release_subdir.
+  # +filtered+:: Only copy files matching a regular expression.  _path_ must
+  #              be a directory.
+  #
+  # The following code releases a directory "Text Files/Extras" containing
+  # files with the extension +txt+.
+  #
+  #   release 'Text Files', :subdir => 'Extras', :filtered => /\.txt$/
   def release path, options={}
     assert !finished?
     @release_infos << ReleaseInfo.new(absolute_path(path), options)
   end
   
-  # Print a heading.  This uses our report when it's available, and $stdout
+  # Print a heading.  This uses Report when it's available, and +$stdout+
   # otherwise.
   def heading str
     if @report && !@report.closed?
@@ -139,7 +147,7 @@ class Build
   end
 end
 
-# Support for an implicit, top-level Build object.
+# Include this module to write build scripts in a domain-specific language.
 #
 #   require 'Build'
 #   include BuildScript
@@ -150,7 +158,7 @@ end
 module BuildScript
   include BuildUtils
   
-  # Start a new build running. See #new for options.
+  # Start a new build running. See Build#new for options.
   def start_build options
     $build = Build.new options
     cd $build.build_dir

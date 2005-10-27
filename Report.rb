@@ -6,7 +6,7 @@ class Report
   class CommandFailed < RuntimeError
   end
 
-  # The path to our report file.  May be nil.
+  # The path to the report file.  May be nil.
   attr_reader :path
 
   # Create a new Report.  Options include:
@@ -26,7 +26,7 @@ class Report
   # Returns true once #close has been called.
   def closed?() @closed end
 
-  # Close our report.
+  # Close the report.
   def close
     assert !@closed
     @report_file.close if @report_file
@@ -53,6 +53,7 @@ class Report
       @report_file.flush
     end
   end
+  private :write
   
   # Run a shell command, and add its output to our report.  Raises
   # CommandFailed if the child process returns an error.
