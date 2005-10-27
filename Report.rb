@@ -6,6 +6,9 @@ class Report
   class CommandFailed < RuntimeError
   end
 
+  # The path to our report file.  May be nil.
+  attr_reader :path
+
   # Create a new Report.  Options include:
   #
   # +silent+:: Do not write report data to standard output.
@@ -13,14 +16,21 @@ class Report
   def initialize options
     @silent = options[:silent]
     @text = []
+    @closed = false
     if options[:dir]
-      @report_file = open("#{options[:dir]}/BuildReport.txt", "w")
+      @path = "#{options[:dir]}/BuildReport.txt"
+      @report_file = open(@path, "w")
     end
   end
   
+  # Returns true once #close has been called.
+  def closed?() @closed end
+
   # Close our report.
   def close
+    assert !@closed
     @report_file.close if @report_file
+    @closed = true
   end
 
   # Add a new heading to the report.
@@ -30,6 +40,8 @@ class Report
   
   # Write a chunk of data to our report.
   def write data
+    assert !@closed
+
     # We store the text as a list so appending will be cheap.
     @text << data
     unless @silent
