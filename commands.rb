@@ -20,7 +20,7 @@ end
 
 # Search through _dirs_ for files referenced in an Inno Setup script as
 # external install-time resources, and add them to our release list.
-def release_installer_support_files iss_file, *dirs
+def release_installer_support_files iss_file, options, *dirs
   # Figure out what files are available in dirs.  This code is fairly
   # fragile if you're trying to access network drives under Cygwin, which
   # confuse various bits of the Ruby standard library.
@@ -35,7 +35,7 @@ def release_installer_support_files iss_file, *dirs
   # Search through iss_file, and release any sources that we have.
   File.readlines(iss_file).each do |source|
     if source =~ /^Source: \{src\}\\([^;]+);.*external/
-      release filemap[$1] if filemap[$1]
+      release filemap[$1], options if filemap[$1]
     end
   end
 end

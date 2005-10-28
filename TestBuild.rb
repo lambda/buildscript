@@ -35,7 +35,7 @@ class TestBuilder < Test::Unit::TestCase
     # Create a file, and mark it for release.
     cd @build_dir do
       open('test.txt', 'w') {|out| out.puts "Hello!"}
-      @build.release 'test.txt', :subdir => 'Nested'
+      @build.release 'test.txt', :subdir => 'Nested', :cd => 1
       mkdir 'filtered'
       cp 'test.txt', 'filtered/test.a'
       cp 'test.txt', 'filtered/test.b'
@@ -51,6 +51,7 @@ class TestBuilder < Test::Unit::TestCase
     assert File.exists?("#{@build.release_subdir}/Nested/test.txt")
     assert File.exists?("#{@build.release_subdir}/filtered/test.a")
     assert !File.exists?("#{@build.release_subdir}/filtered/test.b")
+    assert File.exists?("#{@build.release_subdir}/CD 1.iso")
     assert File.exists?("#{@build.release_subdir}/BuildReport.txt")
   end
 

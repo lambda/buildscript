@@ -77,11 +77,13 @@ class Build
   # +subdir+:: Copy _path_ into the specified subdirectory of #release_subdir.
   # +filtered+:: Only copy files matching a regular expression.  _path_ must
   #              be a directory.
+  # +cd+:: Place a copy of this file on the specified CD.
   #
   # The following code releases a directory "Text Files/Extras" containing
   # files with the extension +txt+.
   #
-  #   release 'Text Files', :subdir => 'Extras', :filtered => /\.txt$/
+  #   release('Text Files', :cd => 2, :subdir => 'Extras',
+  #           :filtered => /\.txt$/)
   def release path, options={}
     assert !finished?
     @release_infos << ReleaseInfo.new(absolute_path(path), options)
@@ -100,6 +102,8 @@ class Build
   # Finish the build, and close our report files.
   def finish
     assert !finished?
+    cds = @release_infos.collect {|i| i.options[:cd]}.compact.sort.uniq
+    cds.each {|n| make_cd n}
     @report.close
     upload_release_files
     @finished = true
@@ -124,6 +128,27 @@ class Build
     end    
   end
 
+  # Make a CD image.
+  def make_cd number
+    # Create a directory of files to place on the CD.
+    heading "Gathering files for CD #{number}"
+    cd_dir = "#{build_dir}/cd#{number}"
+    mkdir_p cd_dir
+    @release_infos.each do |info|
+      cp_release_files(info, cd_dir) if info.options[:cd] == number
+    end
+    
+    # Build an ISO.
+    heading "Building ISO for CD #{number}"
+    cd cd_dir do
+      iso_file = "../CD #{number}.iso"
+      files = Dir.entries('.').select {|name| name != '.' && name != '..'}
+      run 'mkisofs', '-J', '-R', '-o', iso_file, *files
+      release iso_file
+    end
+    rm_r cd_dir
+  end
+
   # Upload all files marked for release.
   def upload_release_files
     # Print an appropriate heading
@@ -135,15 +160,18 @@ class Build
 
     # Release the individual files.
     @release_infos.each do |info|
-      puts info.path unless @silent
-      unless dirty?
-        dest = release_subdir
-        subdir = info.options[:subdir]
-        dest += "/#{subdir}" if subdir
-        mkdir_p dest
-        cp_filtered(info.path, dest, info.options[:filter]) unless dirty?
-      end
+      puts info.path unless @silent      
+      cp_release_files info, release_subdir unless dirty?
     end
+  end
+
+  # Copy the files specified by a ReleaseInfo object to the specified
+  # destination directory.
+  def cp_release_files info, dst
+    subdir = info.options[:subdir]
+    dst = "#{dst}/#{subdir}" if subdir
+    mkdir_p dst
+    cp_filtered info.path, dst, info.options[:filter]
   end
 end
 
@@ -153,8 +181,16 @@ end
 #   include BuildScript
 #
 #   start_build :build_dir => 'c:/build/myproject'
+#
 #   heading 'Check out source code.'
 #   run 'cvs', 'co', 'MyProject'
+#   cd 'MyProject'
+#
+#   heading 'Build the project.'
+#   run 'make'
+#   release 'MyProject Installer.exe'
+#
+#   finish_build_and_upload_files
 module BuildScript
   include BuildUtils
   
