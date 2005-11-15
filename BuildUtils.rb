@@ -1,5 +1,6 @@
 require 'FileUtils'
 require 'Find'
+require 'ChildProcess'
 
 # Assorted functions which are helpful for a build.
 module BuildUtils
@@ -30,7 +31,14 @@ module BuildUtils
     # Look for drive letters and '//SERVER/' paths.
     patterns = [%r{^[A-Za-z]:(/|\\)}, %r{^(//|\\\\)}]
     patterns.each {|patttern| return path if path =~ patttern }
-    return Pathname.new(path).realpath
+    absolute = Pathname.new(path).realpath
+    absolute.to_s.sub(%r{^/cygdrive/(\w)/}, '\\1:/')
+  end
+
+  # Copy _src_ to _dst_, recursively.  Uses an external copy program
+  # for improved performance.
+  def cp_r src, dst
+    Report.run_capturing_output('cp', '-r', src, dst)
   end
 
   # Copy _src_ into _dst_ recursively.  If _filter_ is specified, only
@@ -46,7 +54,7 @@ module BuildUtils
           next unless file =~ filter
           file_dst = "#{dst_absolute}/#{File.dirname(file)}"
           mkdir_p file_dst
-          cp file, file_dst
+          cp_r file, file_dst
         end
       end
     else

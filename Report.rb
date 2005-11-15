@@ -54,21 +54,38 @@ class Report
     end
   end
   private :write
-  
-  # Run a shell command, and add its output to our report.  Raises
-  # CommandFailed if the child process returns an error.
-  def run command, *args
-    formatted = "#{command} #{args.join(' ')}"
-    write ">>> #{formatted}\n"
+
+  # Covert _command_ and _args_ to a formatted string for display to the
+  # user.
+  def Report.format_command_line command, *args
+    "#{command} #{args.join(' ')}"
+  end
+
+  # Run the specified command, and pass its output to our block (if one
+  # is provided).
+  def Report.run_capturing_output command, *args
+    # TODO - Move into ChildProcess?
     ChildProcess.exec({:combine_output => true}, command, *args) do |child|
       child.in.close
       until child.out.eof?
         # Consume output one line at a time.
-        write child.out.gets
+        line = child.out.gets
+        yield line if block_given?
       end
       unless child.wait.success?
+        formatted = format_command_line command, *args
         raise CommandFailed, "Error running <#{formatted}>", caller
       end
+    end    
+  end
+    
+  # Run a shell command, and add its output to our report.  Raises
+  # CommandFailed if the child process returns an error.
+  def run command, *args
+    formatted = Report.format_command_line command, *args
+    write ">>> #{formatted}\n"
+    Report.run_capturing_output(command, *args) do |data|
+      write data
     end
   end
   
