@@ -78,6 +78,7 @@ class Build
   # +filtered+:: Only copy files matching a regular expression.  _path_ must
   #              be a directory.
   # +cd+:: Place a copy of this file on the specified CD.
+  # +cd_only+:: Do not put a copy of this file in the upload directory.
   #
   # The following code releases a directory "Text Files/Extras" containing
   # files with the extension +txt+.
@@ -160,6 +161,7 @@ class Build
 
     # Release the individual files.
     @release_infos.each do |info|
+      next if info.options[:cd_only]
       puts info.path unless @silent      
       cp_release_files info, release_subdir unless dirty?
     end

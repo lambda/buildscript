@@ -8,8 +8,9 @@ end
 # the default location.  For best results, run this from the directory
 # containing your application.
 #   inno_setup_4 'myprogram.iss'
-def inno_setup_4 iss_file
-  run 'c:/Program Files/Inno Setup 4/iscc', iss_file
+def inno_setup_4 iss_file, options={}
+  defines = (options[:define] || {}).map {|var,value| "-d#{var}=#{value}" }
+  run 'c:/Program Files/Inno Setup 4/iscc', iss_file, *defines
 end
 
 # Launch Tamale and have it compile all the Scheme scripts in the current

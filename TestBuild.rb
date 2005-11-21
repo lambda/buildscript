@@ -40,6 +40,8 @@ class TestBuilder < Test::Unit::TestCase
       cp 'test.txt', 'filtered/test.a'
       cp 'test.txt', 'filtered/test.b'
       @build.release 'filtered', :filter => /\.a$/
+      cp 'test.txt', 'cd_only.txt'
+      @build.release 'cd_only.txt', :cd => 1, :cd_only => true
     end
 
     # Finish our build.
@@ -51,6 +53,7 @@ class TestBuilder < Test::Unit::TestCase
     assert File.exists?("#{@build.release_subdir}/Nested/test.txt")
     assert File.exists?("#{@build.release_subdir}/filtered/test.a")
     assert !File.exists?("#{@build.release_subdir}/filtered/test.b")
+    assert !File.exists?("#{@build.release_subdir}/cd_only.txt")
     assert File.exists?("#{@build.release_subdir}/CD 1.iso")
     assert File.exists?("#{@build.release_subdir}/BuildReport.txt")
   end
