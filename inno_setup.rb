@@ -7,21 +7,30 @@ module InnoSetup
   # A parsed *.iss file.
   class SourceFile
     # The components described by this installer.
-    attr_reader :components
+    attr_reader :components, :files
 
     # Read and parse the +*.iss+ file at _path_.
     def initialize path
       source = File::open(path, "r") {|f| f.read }
       sections = InnoSetup::split_into_sections(InnoSetup::preprocess(source))
-      @components = []
-      sections['Components'].each do |line|
-        next if line =~ /^\s*;/ or line =~ /^\s*$/
-        @components << Component::new(InnoSetup::parse_data_line(line))
-      end
+      @components = parse_section sections['Components'], Component
+      @files = parse_section sections['Files'], FileSet
     end
+
+    # Parse _section_ as series of declarations, constructing an
+    # instance of _klass_ for each.
+    def parse_section section, klass
+      @result = []
+      section.each do |line|
+        next if line =~ /^\s*;/ || line =~ /^\s*$/
+        @result << klass::new(InnoSetup::parse_decl_line(line))
+      end
+      @result
+    end
+    private :parse_section
   end
 
-  # A component is a set of files (and related actions) which can be
+  # A Component is a set of files (and related actions) which can be
   # included in an installation.
   class Component
     # An internal name.  Never displayed to the user.
@@ -30,6 +39,21 @@ module InnoSetup
     # Create a Component from the specified _properties_.
     def initialize properties
       @name = properties['Name']
+    end
+  end
+
+  # A single line from the +[Files]+ section, corresponding to one or more
+  # actual files.
+  class FileSet
+    # A source specification.
+    attr_reader :source
+    # Various flags, represented as an array of strings.
+    attr_reader :flags
+
+    # Create a FileSet from the specified _properties_.
+    def initialize properties
+      @source = properties['Source']
+      @flags = (properties['Flags'] || '').split(' ')
     end
   end
 
@@ -99,7 +123,7 @@ module InnoSetup
 
   # Parse a data line.  This is trickier than it should be, because Inno
   # Setup uses a fairly unpleasant quoting format.
-  def parse_data_line line
+  def parse_decl_line line
     result = {}
     until line.empty?
       # Peel a key off our line.
@@ -121,5 +145,5 @@ module InnoSetup
   end
 
   module_function :preprocess, :preprocessor_expand, :split_into_sections
-  module_function :parse_data_line
+  module_function :parse_decl_line
 end

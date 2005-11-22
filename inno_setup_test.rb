@@ -45,9 +45,9 @@ __EOI__
   end
 
   # Make sure we can parse Inno Setup's data line format.
-  def test_data_line
+  def test_decl_line
     line = 'Filename: foo; Parameters: "x ; ""y"""; Components: bar...'
-    parsed = InnoSetup::parse_data_line line
+    parsed = InnoSetup::parse_decl_line line
     assert_equal 'foo', parsed['Filename']
     assert_equal 'x ; "y"', parsed['Parameters']
     assert_equal 'bar...', parsed['Components']
@@ -57,5 +57,8 @@ __EOI__
   def test_source_file
     iss = InnoSetup::SourceFile::new 'fixtures/sample.iss'
     assert_equal %w(base media), iss.components.map {|k,v| k.name }.sort
+    files = iss.files
+    assert_equal 'helper.dll', files[0].source
+    assert_equal ['dontcopy'], files[0].flags
   end
 end
