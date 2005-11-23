@@ -6,28 +6,48 @@ module InnoSetup
 
   # A parsed *.iss file.
   class SourceFile
-    # The components described by this installer.
-    attr_reader :components, :files
+    # The base directory for finding source files.
+    attr_reader :base_dir
+    # The Components described by this installer.
+    attr_reader :components
+    # The FileSets described by this installer.
+    attr_reader :file_sets
 
     # Read and parse the +*.iss+ file at _path_.
     def initialize path
+      @base_dir = File::dirname path
       source = File::open(path, "r") {|f| f.read }
       sections = InnoSetup::split_into_sections(InnoSetup::preprocess(source))
-      @components = parse_section sections['Components'], Component
-      @files = parse_section sections['Files'], FileSet
+      cs = parse_section sections['Components'], Component
+      @components = build_hash(cs) {|c| c.name }
+      @file_sets = parse_section sections['Files'], FileSet
+    end
+
+    private
+
+    # Build a hash table by iterating over a list.
+    def build_hash items
+      result = {}
+      items.each do |v|
+        k = yield v
+        if result.has_key? k
+          raise "Duplicate hash key: #{k} with values #{v} and #{result[k]}"
+        end
+        result[k] = v
+      end
+      result
     end
 
     # Parse _section_ as series of declarations, constructing an
     # instance of _klass_ for each.
     def parse_section section, klass
-      @result = []
+      result = []
       section.each do |line|
         next if line =~ /^\s*;/ || line =~ /^\s*$/
-        @result << klass::new(InnoSetup::parse_decl_line(line))
+        result << klass::new(self, InnoSetup::parse_decl_line(line))
       end
-      @result
+      result
     end
-    private :parse_section
   end
 
   # A Component is a set of files (and related actions) which can be
@@ -37,23 +57,81 @@ module InnoSetup
     attr_reader :name
 
     # Create a Component from the specified _properties_.
-    def initialize properties
+    def initialize iss_file, properties
+      @iss_file = iss_file
       @name = properties['Name']
+    end
+
+    # For each FileSet in this component, call FileSet#files and merge
+    # the results.
+    def files
+      fsets = @iss_file.file_sets.select {|fs| fs.components.include? name }
+      merge_hashes(fsets.map {|fs| fs.files })
+    end
+
+    private
+
+    def merge_hashes hashes
+      result = {}
+      hashes.each do |h|
+        result.merge!(h) {|k,v1,v2| raise "Duplicate hash key: #{k}" }
+      end
+      result
     end
   end
 
-  # A single line from the +[Files]+ section, corresponding to one or more
+  # A single line from the +[Files]+ section, corresponding to zero or more
   # actual files.
   class FileSet
     # A source specification.
     attr_reader :source
     # Various flags, represented as an array of strings.
     attr_reader :flags
+    # The directory in which to place these files.
+    attr_reader :dest_dir
+    # The components to which this FileSet belongs.
+    attr_reader :components
 
     # Create a FileSet from the specified _properties_.
-    def initialize properties
+    def initialize iss_file, properties
+      @iss_file = iss_file
       @source = properties['Source']
       @flags = (properties['Flags'] || '').split(' ')
+      @dest_dir = properties['DestDir']
+      @components = (properties['Components'] || '').split(' ')
+    end
+
+    # Get the source and destination paths for all files in this FileSet.
+    # The source paths should point to the local filesystem.  The
+    # destination paths may be +nil+ (for files which don't get installed),
+    # or may begin with a directory pattern such as +{app}+.
+    def files
+      glob = translate_glob source, flags.include?('recursesubdirs')
+      src = "#{@iss_file.base_dir}/#{glob}"
+      dst =
+        if flags.include?('dontcopy')
+          nil
+        else
+          dst_dir = flags.include?('dontcopy') ? nil : fix_path(dest_dir)
+          dst = "#{dst_dir}/#{glob}"
+        end
+      {src => dst}
+    end
+
+    private
+
+    def translate_glob iss_glob, recursive
+      fixed = fix_path iss_glob
+      if recursive
+        raise "Can't expand path #{iss_glob}" if fixed.count('*') != 1
+        fixed.gsub /\*/, '**/*'
+      else
+        fixed
+      end
+    end
+
+    def fix_path path
+      path.gsub /\\/, '/'
     end
   end
 

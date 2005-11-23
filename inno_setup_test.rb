@@ -56,9 +56,20 @@ __EOI__
   # Parse an actual *.iss file and see how far we get.
   def test_source_file
     iss = InnoSetup::SourceFile::new 'fixtures/sample.iss'
-    assert_equal %w(base media), iss.components.map {|k,v| k.name }.sort
-    files = iss.files
-    assert_equal 'helper.dll', files[0].source
-    assert_equal ['dontcopy'], files[0].flags
+    assert_instance_of Hash, iss.components
+    assert_equal %w(base media), iss.components.values.map {|c| c.name }.sort
+    fs = iss.file_sets
+
+    # Check our simplest FileSet.
+    assert_equal 'helper.dll', fs[0].source
+    assert_equal ['dontcopy'], fs[0].flags
+    assert_nil fs[0].dest_dir
+    assert_equal({'fixtures/helper.dll' => nil}, fs[0].files)
+
+    # Check some more complicated file sets.
+    assert_equal({'fixtures/README.txt' => '{app}/README.txt'}, fs[1].files)
+    #assert_equal({'fixtures/Media/foo.txt' => '{app}/Media/foo.txt',
+    #              'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt'},
+    #             iss.components['media'].files)
   end
 end
