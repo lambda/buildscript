@@ -1,5 +1,7 @@
 # Map $', etc., to actual names.
 require 'English'
+require 'pathname'
+require 'digest/sha1'
 
 # Interface to InnoSetup +*.iss+ files.
 module InnoSetup
@@ -69,6 +71,18 @@ module InnoSetup
       merge_hashes(fsets.map {|fs| fs.files })
     end
 
+    # Compute the manifest of a set of files.
+    def manifest
+      result = []
+      app_prefix = /^\{app\}\//
+      files.each do |path, installed_path|
+        next unless installed_path =~ app_prefix
+        digest = Digest::SHA1.hexdigest(IO.read(path))
+        result << [digest, installed_path.gsub(app_prefix, '')]
+      end
+      result.sort_by {|x| x[1] }.map {|x| "#{x[0]} #{x[1]}\n" }.join
+    end
+
     private
 
     def merge_hashes hashes
@@ -89,6 +103,8 @@ module InnoSetup
     attr_reader :flags
     # The directory in which to place these files.
     attr_reader :dest_dir
+    # File patterns to exclude from this file set.
+    attr_reader :excludes
     # The components to which this FileSet belongs.
     attr_reader :components
 
@@ -98,6 +114,7 @@ module InnoSetup
       @source = properties['Source']
       @flags = (properties['Flags'] || '').split(' ')
       @dest_dir = properties['DestDir']
+      @excludes = (properties['Excludes'] || '').split(',')
       @components = (properties['Components'] || '').split(' ')
     end
 
@@ -106,27 +123,69 @@ module InnoSetup
     # destination paths may be +nil+ (for files which don't get installed),
     # or may begin with a directory pattern such as +{app}+.
     def files
-      glob = translate_glob source, flags.include?('recursesubdirs')
-      src = "#{@iss_file.base_dir}/#{glob}"
-      dst =
-        if flags.include?('dontcopy')
-          nil
-        else
-          dst_dir = flags.include?('dontcopy') ? nil : fix_path(dest_dir)
-          dst = "#{dst_dir}/#{glob}"
-        end
-      {src => dst}
+      src_dir, src_glob = source_dir_and_glob
+      src_base = cleanpath "#{@iss_file.base_dir}/#{src_dir}"
+      src_ruby_glob = translate_glob src_glob
+      files = apply_exclusions(expand_glob_in_dir(src_ruby_glob, src_base))
+      
+      # Build our result list.
+      result = {}
+      files.each do |f|
+        src = "#{src_base}/#{f}"
+        dst = dest_path_for_file f
+        result[src] = dst
+      end
+
+      # Fail on empty filesets, unless they're allowed.
+      if result.empty? && !flags.include?('skipifsourcedoesntexist')
+        raise "Unexpected empty file set: #{source}"
+      end
+      result
     end
 
     private
 
-    def translate_glob iss_glob, recursive
-      fixed = fix_path iss_glob
-      if recursive
-        raise "Can't expand path #{iss_glob}" if fixed.count('*') != 1
-        fixed.gsub /\*/, '**/*'
+    # Split our 'Source' into a directory and a glob component.
+    def source_dir_and_glob
+      path = fix_path source
+      dir, glob = File.dirname(path), File.basename(path)
+      raise "Can't handle ISS pattern #{source}" if dir.include?('*')
+      return dir, glob
+    end
+
+    # Translate a glob from ISS format to Ruby format.
+    def translate_glob iss_glob
+      raise "Can't expand path #{iss_glob}" if iss_glob.include?('**')
+      prefix = flags.include?('recursesubdirs') ? "**/" : ""
+      "#{prefix}#{iss_glob}"
+    end
+
+    def expand_glob_in_dir glob, dir
+      Dir.chdir(dir) { Dir[glob] }
+    end
+
+    # If any path in _path_ has a component mentioned in our 'Excludes'
+    # list, then remove that name from our list.  This filters out CVS
+    # directories and whatnot.
+    def apply_exclusions paths
+      paths.reject do |path|
+        path.split("/").any? do |component|
+          excludes.any? do |pattern|
+            File.fnmatch(pattern, component)
+          end
+        end
+      end
+    end
+
+    def cleanpath path
+      Pathname.new(path).cleanpath.to_s
+    end
+
+    def dest_path_for_file file
+      if flags.include?('dontcopy')
+        nil
       else
-        fixed
+        "#{fix_path(dest_dir)}/#{file}"
       end
     end
 
@@ -160,7 +219,7 @@ module InnoSetup
         printing = !defines.has_key?($1)
       when /^#\s*else\s*$/
         printing = !printing
-      when /^#\s*endif\s*$/
+      when /^#\s*endif(\s+(\w+))?\s*$/
         printing = printing_stack.pop
       when /^#.*$/
         raise "Unknown preprocessor command: #{line}"

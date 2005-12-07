@@ -23,7 +23,7 @@ baz
 #endif
 #ifdef Z
 moby
-#endif
+#endif Z
 #if E
 external
 #endif
@@ -61,15 +61,26 @@ __EOI__
     fs = iss.file_sets
 
     # Check our simplest FileSet.
-    assert_equal 'helper.dll', fs[0].source
+    assert_equal 'helper.txt', fs[0].source
     assert_equal ['dontcopy'], fs[0].flags
     assert_nil fs[0].dest_dir
-    assert_equal({'fixtures/helper.dll' => nil}, fs[0].files)
+    assert_equal({'fixtures/helper.txt' => nil}, fs[0].files)
 
     # Check some more complicated file sets.
     assert_equal({'fixtures/README.txt' => '{app}/README.txt'}, fs[1].files)
-    #assert_equal({'fixtures/Media/foo.txt' => '{app}/Media/foo.txt',
-    #              'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt'},
-    #             iss.components['media'].files)
+    assert_equal %W(CVS .cvsignore *.bak .\#* \#* *~), fs[2].excludes
+    assert_equal({'fixtures/Media/foo.txt' => '{app}/Media/foo.txt',
+                  'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt'},
+                 iss.components['media'].files)
+  end
+
+  # Generate a manifest file.
+  def test_manifest
+    null_digest = Digest::SHA1.hexdigest('')
+    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss'
+    assert_equal <<__EOD__, iss.components['media'].manifest
+#{null_digest} Media/baz.txt
+#{null_digest} Media/foo.txt
+__EOD__
   end
 end
