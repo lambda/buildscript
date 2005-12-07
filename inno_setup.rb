@@ -132,6 +132,7 @@ module InnoSetup
       result = {}
       files.each do |f|
         src = "#{src_base}/#{f}"
+        next if File.directory?(src)
         dst = dest_path_for_file f
         result[src] = dst
       end

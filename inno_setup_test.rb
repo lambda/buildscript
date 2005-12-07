@@ -70,7 +70,8 @@ __EOI__
     assert_equal({'fixtures/README.txt' => '{app}/README.txt'}, fs[1].files)
     assert_equal %W(CVS .cvsignore *.bak .\#* \#* *~), fs[2].excludes
     assert_equal({'fixtures/Media/foo.txt' => '{app}/Media/foo.txt',
-                  'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt'},
+                  'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt',
+                  'fixtures/Media2/sub/w.txt' => '{app}/Media/sub/w.txt'},
                  iss.components['media'].files)
   end
 
@@ -81,6 +82,7 @@ __EOI__
     assert_equal <<__EOD__, iss.components['media'].manifest
 #{null_digest} Media/baz.txt
 #{null_digest} Media/foo.txt
+#{null_digest} Media/sub/w.txt
 __EOD__
   end
 end
