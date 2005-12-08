@@ -16,10 +16,11 @@ module InnoSetup
     attr_reader :file_sets
 
     # Read and parse the +*.iss+ file at _path_.
-    def initialize path
+    def initialize path, defines
       @base_dir = File::dirname path
       source = File::open(path, "r") {|f| f.read }
-      sections = InnoSetup::split_into_sections(InnoSetup::preprocess(source))
+      preprocessed = InnoSetup::preprocess(source, defines)
+      sections = InnoSetup::split_into_sections(preprocessed)
       cs = parse_section sections['Components'], Component
       @components = build_hash(cs) {|c| c.name }
       @file_sets = parse_section sections['Files'], FileSet
@@ -64,11 +65,15 @@ module InnoSetup
       @name = properties['Name']
     end
 
+    # Get all the file sets associated with this component.
+    def file_sets
+      @iss_file.file_sets.select {|fs| fs.components.include? name }
+    end
+
     # For each FileSet in this component, call FileSet#files and merge
     # the results.
     def files
-      fsets = @iss_file.file_sets.select {|fs| fs.components.include? name }
-      merge_hashes(fsets.map {|fs| fs.files })
+      merge_hashes(file_sets.map {|fs| fs.files })
     end
 
     # Compute the manifest of a set of files.
@@ -81,6 +86,22 @@ module InnoSetup
         result << [digest, installed_path.gsub(app_prefix, '')]
       end
       result.sort_by {|x| x[1] }.map {|x| "#{x[0]} #{x[1]}\n" }.join
+    end
+
+    # The name of the MANIFEST file for this component.
+    def manifest_name
+      "MANIFEST.#{name}"
+    end
+
+    # Does this component include a MANIFEST._name_ file?  This should
+    # be a single, non-wildcarded declaration of the form:
+    #
+    #   Source: MANIFEST.name; DestDir: {app}; \
+    #     Flags: skipifsourcedoesntexist; Components: name
+    #
+    # ...where _name_ is the name of this component.
+    def includes_manifest?
+      file_sets.any? {|fs| fs.source == manifest_name }
     end
 
     private
@@ -199,36 +220,38 @@ module InnoSetup
   def preprocess(text, defines={})
     defines = defines.dup
     result = []
-    printing_stack = []
-    printing = true
+    active_stack = []
+    active = true
     text.each_line do |line|
       case line
       when /^#\s*define\s+(\w+)\s+(\w*)\s*$/
-        defines[$1] = $2
+        defines[$1] = $2 if active
       when /^#\s*if\s+(\w+)\s*$/
-        printing_stack.push printing
-        printing = 
+        active_stack.push active
+        active = active &&
           case preprocessor_expand($1, defines)
           when '0': false 
           when '1': true
           else raise "Can't parse: #{line}" end
       when /^#\s*ifdef\s+(\w+)\s*$/
-        printing_stack.push printing
-        printing = defines.has_key?($1)
+        active_stack.push active
+        active = active && defines.has_key?($1)
       when /^#\s*ifndef\s+(\w+)\s*$/
-        printing_stack.push printing
-        printing = !defines.has_key?($1)
+        active_stack.push active
+        active = active && !defines.has_key?($1)
       when /^#\s*else\s*$/
-        printing = !printing
+        # If we have a parent if, and it's inactive, we don't actually
+        # want to do anything here.
+        active = !active if active_stack.empty? || active_stack.last
       when /^#\s*endif(\s+(\w+))?\s*$/
-        printing = printing_stack.pop
+        active = active_stack.pop
       when /^#.*$/
         raise "Unknown preprocessor command: #{line}"
       else
-        result << line if printing
+        result << line if active
       end
     end
-    raise "Missing #endif" unless printing_stack.empty?
+    raise "Missing #endif" unless active_stack.empty?
     result.join
   end
 

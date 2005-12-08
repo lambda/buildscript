@@ -3,7 +3,10 @@
 Source: helper.txt; Flags: dontcopy
 Source: README.txt; DestDir: {app}; Components: base
 Source: Media\*.txt; DestDir: {app}\Media; Excludes: CVS,.cvsignore,*.bak,.#*,#*,*~; Flags: recursesubdirs; Components: media
+#ifdef EXTRA_MEDIA
 Source: Media2\*; DestDir: {app}\Media; Excludes: CVS,.cvsignore,*.bak,.#*,#*,*~; Flags: recursesubdirs; Components: media
+#endif
+Source: MANIFEST.media; DestDir: {app}; Flags: skipifsourcedoesntexist; Components: media
 
 [Components]
 Name: base; Description: Base Files; Flags: fixed; Types: custom regular full

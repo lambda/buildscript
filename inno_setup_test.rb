@@ -24,8 +24,19 @@ baz
 #ifdef Z
 moby
 #endif Z
+#ifndef E
+nested define should be ignored
+#define E 0
+#endif
 #if E
 external
+#endif
+#if 0
+#if 1
+nested if shouldn't reactivate
+#else
+neither should this
+#endif
 #endif
 __EOI__
   end
@@ -55,7 +66,7 @@ __EOI__
 
   # Parse an actual *.iss file and see how far we get.
   def test_source_file
-    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss'
+    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss', 'EXTRA_MEDIA' => 1
     assert_instance_of Hash, iss.components
     assert_equal %w(base media), iss.components.values.map {|c| c.name }.sort
     fs = iss.file_sets
@@ -77,8 +88,12 @@ __EOI__
 
   # Generate a manifest file.
   def test_manifest
+    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss', 'EXTRA_MEDIA' => 1
+
+    assert !iss.components['base'].includes_manifest?
+    assert iss.components['media'].includes_manifest?
+
     null_digest = Digest::SHA1.hexdigest('')
-    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss'
     assert_equal <<__EOD__, iss.components['media'].manifest
 #{null_digest} Media/baz.txt
 #{null_digest} Media/foo.txt
