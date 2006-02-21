@@ -52,7 +52,8 @@ class Build
   def initialize options
     @build_dir = options[:build_dir]
     @silent = options[:silent]
-    @dirty = options[:dirty_build]
+    @enabled_headings = options[:enabled_headings]
+    @dirty = options[:dirty_build] || (@enabled_headings && true)
     @release_dir = options[:release_dir] unless dirty?
     @finished = false
     @release_infos = []
@@ -90,13 +91,21 @@ class Build
     @release_infos << ReleaseInfo.new(absolute_path(path), options)
   end
   
-  # Print a heading.  This uses Report when it's available, and +$stdout+
-  # otherwise.
-  def heading str
-    if @report && !@report.closed?
-      @report.heading str
-    else
-      puts ">>>>> #{str}" unless @silent
+  # Print a heading, and execute the corresponding body of code, if this 
+  # section is not disabled.  This uses Report when it's available, and 
+  # +$stdout+ otherwise.
+  def heading str, options={}
+    # We want to make sure that every named heading has an associated block, 
+    # because the only reason to name a heading is to be able to disable the 
+    # associated block.
+    assert block_given? if options[:name]
+    if should_execute_section?(options[:name])
+      if @report && !@report.closed?
+        @report.heading str
+      else
+        puts ">>>>> #{str}" unless @silent
+      end
+      yield if block_given?
     end
   end
 
@@ -111,6 +120,14 @@ class Build
   end
 
   private
+
+  # Should we execute a section with a given name? True if we have a name 
+  # and it's on the list of sections to execute, we don't have a name, or 
+  # we don't have a list of sections to execute, which means execute all by
+  # default. 
+  def should_execute_section? name
+    !name || !@enabled_headings || @enabled_headings.include?(name)
+  end
 
   # Create a directory to hold our release files.
   def make_release_dir
@@ -198,6 +215,12 @@ module BuildScript
   
   # Start a new build running. See Build#new for options.
   def start_build options
+    if ARGV.include? "dirty"
+      ARGV.delete "dirty"
+      options[:dirty_build] = true
+    end
+    sections = ARGV.map {|arg| arg.to_sym}
+    options[:enabled_headings] = sections unless sections == []
     $build = Build.new options
     cd $build.build_dir
   end
@@ -209,7 +232,7 @@ module BuildScript
   end
 
   # See Build#heading.
-  def heading(str) $build.heading(str) end
+  def heading(str, options={}, &block) $build.heading(str, options, &block) end
   # See Report#run.
   def run(command, *args) $build.run(command, *args) end
   # See Build#dirty?
