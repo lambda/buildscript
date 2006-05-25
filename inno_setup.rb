@@ -97,7 +97,7 @@ module InnoSetup
       return @manifest if @manifest
       result = []
       app_prefix = /^\{app\}\//
-      manifest_regexp = /#{manifest_name}$/o
+      manifest_regexp = /#{manifest_name}$/
       files.each do |path, installed_path|
         next unless installed_path =~ app_prefix
         # Skip the MANIFEST file if it already exists. Should only happen 
