@@ -94,10 +94,23 @@ __EOI__
     assert iss.components['media'].includes_manifest?
 
     null_digest = Digest::SHA1.hexdigest('')
-    assert_equal <<__EOD__, iss.components['media'].manifest
-#{null_digest} Media/baz.txt
-#{null_digest} Media/foo.txt
-#{null_digest} Media/sub/w.txt
+    expected_manifest = <<__EOD__
+#{null_digest} 0 Media/baz.txt
+#{null_digest} 0 Media/foo.txt
+#{null_digest} 0 Media/sub/w.txt
 __EOD__
+
+    manifest_digest = Digest::SHA1.hexdigest(expected_manifest)
+    manifest_size = expected_manifest.size
+
+    expected_spec = <<__EOD__
+Build: 2006-01-01
+
+#{manifest_digest} #{manifest_size} MANIFEST.media
+__EOD__
+
+    
+    assert_equal expected_manifest, iss.components['media'].manifest
+    assert_equal expected_spec, iss.spec_file(:Build => "2006-01-01")
   end
 end

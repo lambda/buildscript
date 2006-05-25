@@ -26,6 +26,22 @@ module InnoSetup
       @file_sets = parse_section sections['Files'], FileSet
     end
 
+    # Create a +.spec+ file, listing the versions of all of the components,
+    # along with the build information specified.
+    def spec_file params
+      file = ""
+      params.each do |k,v|
+        file << "%s: %s\n" % [k, v]
+      end
+      file << "\n"
+      @components.each do |name, component|
+        next unless component.includes_manifest?
+        file << component.manifest_meta 
+        file << "\n"
+      end
+      file
+    end
+
     private
 
     # Build a hash table by iterating over a list.
@@ -78,14 +94,25 @@ module InnoSetup
 
     # Compute the manifest of a set of files.
     def manifest
+      return @manifest if @manifest
       result = []
       app_prefix = /^\{app\}\//
+      manifest_regexp = /#{manifest_name}$/o
       files.each do |path, installed_path|
         next unless installed_path =~ app_prefix
+        # Skip the MANIFEST file if it already exists. Should only happen 
+        # when doing a dirty build. 
+        # TODO - we should only skip if we're doing a dirty build; if we're 
+        # doing a normal build, and have a preexisting manifest, we should 
+        # fail hard. 
+        next if path =~ manifest_regexp 
         digest = Digest::SHA1.hexdigest(IO.read(path))
-        result << [digest, installed_path.gsub(app_prefix, '')]
+        # TODO - Should use a struct, not an array.
+        result << [digest, File.size(path), 
+                   installed_path.gsub(app_prefix, '')]
       end
-      result.sort_by {|x| x[1] }.map {|x| "#{x[0]} #{x[1]}\n" }.join
+      @manifest = 
+        result.sort_by {|x| x[2] }.map {|x| "#{x[0]} #{x[1]} #{x[2]}\n" }.join
     end
 
     # The name of the MANIFEST file for this component.
@@ -102,6 +129,11 @@ module InnoSetup
     # ...where _name_ is the name of this component.
     def includes_manifest?
       file_sets.any? {|fs| fs.source == manifest_name }
+    end
+
+    def manifest_meta
+      digest = Digest::SHA1.hexdigest(manifest)
+      "#{digest} #{manifest.size} #{manifest_name}"
     end
 
     private

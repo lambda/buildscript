@@ -239,7 +239,9 @@ module BuildScript
   def dirty_build?() $build.dirty? end
   # See Build#release.
   def release(path, options={}) $build.release(path, options) end
+  
+  def release_id() $build.release_id end
 
   module_function :start_build, :finish_build_and_upload_files
-  module_function :heading, :run, :dirty_build?, :release
+  module_function :heading, :run, :dirty_build?, :release, :release_id
 end
