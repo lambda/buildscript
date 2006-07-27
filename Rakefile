@@ -1,4 +1,6 @@
-# Type 'rake -H' for help.
+# Type 'rake -H' for help, or 'rake -T' for a list of tasks.
+
+require 'rake/testtask'
 
 SRC = FileList['*.rb']
 DOC_SRC = SRC.select {|f| !(f =~ /^Test/) }
@@ -6,8 +8,10 @@ DOC_SRC = SRC.select {|f| !(f =~ /^Test/) }
 task :default => [:test]
 
 desc "Run our test suites"
-task :test do |t|
-  sh 'ruby', 'TestAll.rb'
+Rake::TestTask.new(:test) do |t|
+  #t.libs << 'lib'
+  t.pattern = '*_test.rb'
+  t.verbose = true
 end
 
 desc "Make a nice manual"

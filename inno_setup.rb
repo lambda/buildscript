@@ -1,5 +1,5 @@
 # Map $', etc., to actual names.
-require 'English'
+require 'english'
 require 'pathname'
 require 'digest/sha1'
 

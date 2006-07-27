@@ -1,8 +1,8 @@
-require 'Report'
+require 'report'
 require 'test/unit'
 
 # Test our Report class.
-class TestReport < Test::Unit::TestCase
+class ReportTest < Test::Unit::TestCase
   # Called once before running each test case.
   def setup
     @report = Report.new(:silent => true)

@@ -1,8 +1,8 @@
-require 'ChildProcess'
+require 'child_process'
 require 'test/unit'
 
 # Test the ChildProcess class to make sure that it works.
-class TestChildProcess < Test::Unit::TestCase
+class ChildProcessTest < Test::Unit::TestCase
   # Run a really simple command.  Ruby's _Open3_ has no trouble with this.
   def test_simple_command
     ChildProcess.exec({}, 'echo', 'foo') do |child|

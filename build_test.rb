@@ -1,7 +1,7 @@
 require 'test/unit'
-require 'Build'
+require 'build'
 
-module AbstractBuilderTest 
+module AbstractBuildTest 
   include FileUtils
   # This setup is perfomed before each test method.
   def setup
@@ -53,8 +53,8 @@ module AbstractBuilderTest
 end  
 
 # Test our one-button build system.
-class BuilderTest < Test::Unit::TestCase
-  include AbstractBuilderTest
+class BuildTest < Test::Unit::TestCase
+  include AbstractBuildTest
 
   # Make sure we create a build directory.
   def test_directories
@@ -119,11 +119,12 @@ class BuilderTest < Test::Unit::TestCase
 
 end
 
-class BuilderDisabledTest < Test::Unit::TestCase
-  include AbstractBuilderTest
+class BuildDisabledTest < Test::Unit::TestCase
+  include AbstractBuildTest
 
   def make_build 
     # We need a different build object from the normal tests, since 
+    # XXX - Since what? :-)
     @build = Build.new(:build_dir => @build_dir, :release_dir => @release_dir,
                        :silent => true, :enabled_headings => [:enabled_body])
 
