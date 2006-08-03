@@ -1,11 +1,11 @@
 require 'test/unit'
-require 'build_updater_dir'
+require 'update_server_installer'
 require 'pathname'
 require 'fileutils'
 
 include FileUtils
 
-class BuildUpdaterDirTest < Test::Unit::TestCase
+class UpdateServerInstallerTest < Test::Unit::TestCase
   NullHash = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
   FooHash = '855426068ee8939df6bce2c2c4b1e7346532a133'
 
