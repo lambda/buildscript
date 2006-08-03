@@ -1,7 +1,6 @@
 require 'fileutils'
 require 'pathname'
 require 'child_process'
-require 'test/unit'
 require 'manifest_parser'
 
 class UpdateServerInstaller
