@@ -1,4 +1,5 @@
 require 'build'
+require 'remote_host'
 
 # Include this module to write build scripts in a domain-specific language.
 #
@@ -45,6 +46,10 @@ module Buildscript
   def dirty_build?() $build.dirty? end
   # See Build#release.
   def release(path, options={}) $build.release(path, options) end
+  # See RemoteHost#initialize
+  def remote_host(host) RemoteHost.new(host, :runner => $build) end
+
+  def buildscript_source_dir() __FILE__.sub(/buildscript\.rb$/, '') end
   
   def release_id() $build.release_id end
 
