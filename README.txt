@@ -2,7 +2,7 @@ In order to be able to run build scripts created with Buildscript, you will
 need Cygwin, Ruby and mkisofs. Follow these steps to install and run the
 builder. These instructions assume that you already have a working Cygwin. 
 
-1. Run Cygwin setup, select ruby, gcc, and make, and install them. 
+1. Run Cygwin setup, select ruby, gcc, make, and rsync, and install them. 
 2. Download cdrtools from ftp://ftp.berlios.de/pub/cdrecord/
 3. Extract cdrtools, enter directory, make, make install,
    Note: If errors occur, see the message at the end of this readme, apply the 
