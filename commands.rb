@@ -13,6 +13,12 @@ def inno_setup_4 iss_file, options={}
   run 'c:/Program Files/Inno Setup 4/iscc', iss_file, *defines
 end
 
+# ditto, for Inno Setup 5
+def inno_setup_5 iss_file, options={}
+  defines = (options[:define] || {}).map {|var,value| "-d#{var}=#{value}" }
+  run 'c:/Program Files/Inno Setup 5/iscc', iss_file, *defines
+end
+
 # Launch Tamale and have it compile all the Scheme scripts in the current
 # directory.
 def compile_scheme_scripts
