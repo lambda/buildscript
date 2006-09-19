@@ -119,6 +119,24 @@ class Build
     @finished = true
   end
 
+  # Determine the command line options to hide files on a given CD
+  def mkisofs_hidden cd
+    args = []
+    @release_infos.each do |info|
+      if info.options[:cd] == cd && info.options[:hidden]
+        args.push '-hidden'
+        base = Pathname.new(info.path).basename.to_s
+        name = if info.options[:subdir]
+                 "#{info.options[:subdir]}/#{base}"
+               else
+                 base
+               end
+        args.push name
+      end
+    end
+    args
+  end
+
   private
 
   # Should we execute a section with a given name? True if we have a name 
@@ -161,7 +179,8 @@ class Build
     cd cd_dir do
       iso_file = "../CD #{number}.iso"
       files = Dir.entries('.').select {|name| name != '.' && name != '..'}
-      run 'mkisofs', '-J', '-R', '-o', iso_file, *files
+      extra_args = mkisofs_hidden(number) + files 
+      run 'mkisofs', '-J', '-R', '-o', iso_file, *extra_args
       release iso_file
     end
     rm_r cd_dir

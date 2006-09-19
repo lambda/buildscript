@@ -76,6 +76,13 @@ class BuildTest < Test::Unit::TestCase
       @build.release 'filtered', :filter => /\.a$/
       cp 'test.txt', 'cd_only.txt'
       @build.release 'cd_only.txt', :cd => 1, :cd_only => true
+      cp 'test.txt', 'hidden.txt'
+      cp 'test.txt', 'hidden2.txt'
+      @build.release 'hidden.txt', :hidden => true, :cd => 1, :cd_only => true
+      @build.release('hidden2.txt', :hidden => true, :cd => 2, 
+                     :subdir => 'Nested')
+      assert_equal ['-hidden', 'hidden.txt'], @build.mkisofs_hidden(1)
+      assert_equal ['-hidden', 'Nested/hidden2.txt'], @build.mkisofs_hidden(2)
     end
 
     assert !@build.dirty?
@@ -91,7 +98,10 @@ class BuildTest < Test::Unit::TestCase
     assert !File.exists?("#{@build.release_subdir}/filtered/test.b")
     assert !File.exists?("#{@build.release_subdir}/cd_only.txt")
     assert File.exists?("#{@build.release_subdir}/CD 1.iso")
+    assert File.exists?("#{@build.release_subdir}/CD 2.iso")
     assert File.exists?("#{@build.release_subdir}/BuildReport.txt")
+    assert !File.exists?("#{@build.release_subdir}/hidden.txt")
+    assert File.exists?("#{@build.release_subdir}/Nested/hidden2.txt")    
   end
 
   # Make sure we're getting a build report.
