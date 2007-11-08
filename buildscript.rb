@@ -1,5 +1,10 @@
 require 'build'
 require 'remote_host'
+require 'pathname'
+
+# Calculate this now, while we have a fighting chance of resolving relative
+# paths correctly.
+$_buildscript_source_dir = Pathname.new(File.dirname(__FILE__)).realpath
 
 # Include this module to write build scripts in a domain-specific language.
 #
@@ -49,7 +54,7 @@ module Buildscript
   # See RemoteHost#initialize
   def remote_host(host) RemoteHost.new(host, :runner => $build) end
 
-  def buildscript_source_dir() __FILE__.sub(/buildscript\.rb$/, '') end
+  def buildscript_source_dir() $_buildscript_source_dir end
   
   def release_id() $build.release_id end
 

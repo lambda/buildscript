@@ -22,7 +22,9 @@ end
 # Launch Tamale and have it compile all the Scheme scripts in the current
 # directory.
 def compile_scheme_scripts
-  run './Tamale', '-e', '(exit-script)', '.'
+  # We need to give a real path here, because "." will cause problems for
+  # the engine.  And it needs to be a Windows path, not a Cygwin path!
+  run './Tamale', '-e', '(exit-script)', absolute_path(pwd)
 end
 
 # Search through _dirs_ for files referenced in an Inno Setup script as
