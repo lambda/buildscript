@@ -50,3 +50,41 @@ def release_installer_support_files iss_file, options, *dirs
     end
   end
 end
+
+# Parse the iss_file, and generate the manifest files for this release.
+# Include update_url in the manifest files, so that the installed program
+# knows where to find updates.
+def generate_manifest_files iss_file, update_url
+  iss = InnoSetup::SourceFile.new(iss_file, 'CD_INSTALLER' => 1)
+  iss.components.each do |name, component|
+    next unless component.includes_manifest?
+    manifest = component.manifest
+    # TODO - We need to include *.iss file's directory when creating this file.
+    File.open(component.manifest_name, 'w') {|f| f.write(manifest) }
+  end
+  File.open("release.spec", 'w') do |f| 
+    f.write(iss.spec_file("Build" => release_id || "DIRTY", 
+                          "Update-URL" => update_url))
+  end
+end
+
+# Copy files to update server, and put them in the right places for us to
+# update from. 
+# TODO - could probably still use some refactoring, as could MANIFEST section
+# TODO - don't copy .svn directories
+def upload_files_for_updater(update_ssh_host, update_path,
+                             update_temp_path, program_unix_name)
+                             
+  server = remote_host(update_ssh_host)
+  program_temp = "#{update_temp_path}/#{program_unix_name}"
+  buildscript_temp = "#{update_temp_path}/buildscript"
+  
+  server.run('rm', '-rf', program_temp, buildscript_temp)
+  server.upload('./', program_temp, :exclude => '.svn')
+  server.upload("#{buildscript_source_dir}/", buildscript_temp,
+                :exclude => '.svn')
+  server.run('ruby', "-I#{buildscript_temp}", 
+             "#{buildscript_temp}/build_update_server.rb",
+             program_temp, update_path)
+  server.run('rm', '-rf', program_temp, buildscript_temp)
+end
