@@ -1,5 +1,6 @@
 require 'forwardable'
 require 'pathname'
+require 'digest/sha1'
 
 require 'child_process'
 require 'build_utils'
@@ -179,6 +180,11 @@ class Build
     @signing_key_path = CodeSigning::find_key(@signing_key)
     print "Password for #{@signing_key_path} (type carefully!): "
     @signing_key_password = CodeSigning::gets_secret
+
+    # TODO - Temporary code to print a hexdigest of the password so that
+    # the person running the build has a chance of detecting bad passwords.
+    digest = Digest::SHA1.new(@signing_key_password).hexdigest
+    puts "\n    PLEASE CONFIRM PASSWORD DIGEST:\n\n    #{digest}\n\n"
   end
 
   # Should we execute a section with a given name? True if we have a name 
