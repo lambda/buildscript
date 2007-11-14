@@ -79,7 +79,6 @@ def upload_files_for_updater(update_ssh_host, update_path,
   program_temp = "#{update_temp_path}/#{program_unix_name}"
   buildscript_temp = "#{update_temp_path}/buildscript"
   
-  server.run('rm', '-rf', program_temp, buildscript_temp)
   server.upload('./', program_temp, :exclude => '.svn')
   server.upload("#{buildscript_source_dir}/", buildscript_temp,
                 :exclude => '.svn')

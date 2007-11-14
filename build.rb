@@ -4,6 +4,7 @@ require 'pathname'
 require 'child_process'
 require 'build_utils'
 require 'report'
+require 'code_signing'
 
 # Implements a mini-language for describing one-button builds.
 class Build
@@ -34,6 +35,15 @@ class Build
   # Returns true if the build is "dirty", that is, not checked out from
   # scratch.
   def dirty?() @dirty end
+
+  # Should we sign this build?
+  def sign?() @sign end
+
+  # Returns true if the build is in release mode.  A "release" build is one
+  # which is being made available to the public; other builds are assumed
+  # to be purely internal.  Typically, higher layers will upload builds to
+  # a different server if this function returns true.
+  def release?() @release end
   
   # Returns true once #finish has been called.
   def finished?() @finished end
@@ -54,9 +64,15 @@ class Build
     @silent = options[:silent]
     @enabled_headings = options[:enabled_headings]
     @dirty = options[:dirty_build] || (@enabled_headings && true)
+    @release = options[:release_build] || false
+    @sign = options[:sign] || @release # Always sign release builds.
+    @signing_key = options[:signing_key]
     @release_dir = options[:release_dir] unless dirty?
     @finished = false
     @release_infos = []
+
+    # Set up code signing first, because it has an interactive prompt.
+    initialize_code_signing @signing_key if sign?
 
     # Delete our build directory if it exists.
     if File.exists?(build_dir) && !dirty?
@@ -73,6 +89,16 @@ class Build
     make_release_dir unless dirty?
   end
 
+  # If code signing is enabled, sign the specified file.
+  def sign_file path, description=nil, description_url=nil
+    return unless sign?
+    CodeSigning::sign_file(path,
+                           :key_file => @signing_key_path,
+                           :password => @signing_key_password,
+                           :description => description,
+                           :description_url => description_url)
+  end
+  
   # Indicate that a file or directory should be included in our release.
   #
   # +subdir+:: Copy _path_ into the specified subdirectory of #release_subdir.
@@ -138,6 +164,22 @@ class Build
   end
 
   private
+
+  # Set up our code signing environment.
+  #
+  # TODO - Figure out how to check the validity of the password now, up
+  # front.
+  def initialize_code_signing key_file
+    # Do we support hidden passwords?
+    unless CodeSigning::HIDDEN_PASSWORDS
+      raise "Must install Ruby termios gem to sign code"
+    end
+    
+    # Get the private key and the password to unlock it.
+    @signing_key_path = CodeSigning::find_key(@signing_key)
+    print "Password for #{@signing_key_path} (type carefully!): "
+    @signing_key_password = CodeSigning::gets_secret
+  end
 
   # Should we execute a section with a given name? True if we have a name 
   # and it's on the list of sections to execute, we don't have a name, or 

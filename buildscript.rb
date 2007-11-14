@@ -27,9 +27,17 @@ module Buildscript
   
   # Start a new build running. See Build#new for options.
   def start_build options
-    if ARGV.include? "dirty"
-      ARGV.delete "dirty"
+    if ARGV.include? "--dirty"
+      ARGV.delete "--dirty"
       options[:dirty_build] = true
+    end
+    if ARGV.include? "--release"
+      ARGV.delete "--release"
+      options[:release_build] = true
+    end
+    if ARGV.include? "--sign"
+      ARGV.delete "--sign"
+      options[:sign] = true
     end
     sections = ARGV.map {|arg| arg.to_sym}
     options[:enabled_headings] = sections unless sections == []
@@ -47,8 +55,16 @@ module Buildscript
   def heading(str, options={}, &block) $build.heading(str, options, &block) end
   # See Report#run.
   def run(command, *args) $build.run(command, *args) end
+  # See Build#sign?
+  def sign?() $build.sign? end
   # See Build#dirty?
   def dirty_build?() $build.dirty? end
+  # See Build#release?
+  def release_build?() $build.release? end
+  # See Build#sign_file
+  def sign_file path, description=nil, description_url=nil
+    $build.sign_file path, description, description_url
+  end
   # See Build#release.
   def release(path, options={}) $build.release(path, options) end
   # See RemoteHost#initialize
@@ -59,5 +75,6 @@ module Buildscript
   def release_id() $build.release_id end
 
   module_function :start_build, :finish_build_and_upload_files
-  module_function :heading, :run, :dirty_build?, :release, :release_id
+  module_function :heading, :run, :sign?, :dirty_build?, :release_build?
+  module_function :sign_file, :release, :release_id
 end
