@@ -10,14 +10,12 @@ class RemoteHost
     @runner.run('ssh', @host, *command_line)
   end
 
-  # TODO - allow filtering out directories matching pattern (like .svn)
   def upload src, dst, options={}
+    args = ['-r', "--delete", "--delete-excluded"]
     if options[:exclude]
-      @runner.run('rsync', '-r', "--delete", "--delete-excluded",
-                  "--exclude=#{options[:exclude]}", src, "#{@host}:#{dst}")
-    else
-      @runner.run('rsync', '-r', "--delete", "--delete-excluded",
-                  src, "#{@host}:#{dst}")
+      args += ["--exclude=#{options[:exclude]}"]
     end
+    args += [src, "#{@host}:#{dst}"]
+    @runner.run('rsync', *args)
   end
 end

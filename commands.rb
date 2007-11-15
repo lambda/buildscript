@@ -97,6 +97,8 @@ def upload_files_for_updater(update_ssh_host, update_path,
   server.upload('./', program_temp, :exclude => '.svn')
   server.upload("#{buildscript_source_dir}/", buildscript_temp,
                 :exclude => '.svn')
+  server.run('chmod', '-R', 'a+r', program_temp, buildscript_temp)
+  server.run('chmod', '-R', 'ug+w', program_temp, buildscript_temp)
   server.run('ruby', "-I#{buildscript_temp}", 
              "#{buildscript_temp}/build_update_server.rb",
              program_temp, update_path)
