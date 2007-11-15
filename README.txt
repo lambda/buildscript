@@ -9,14 +9,19 @@ builder. These instructions assume that you already have a working Cygwin.
          patch, and try again. 
 4. Add the following line to your .bash_profile in your Cygwin home directory:
    export PATH=/opt/schily/bin:$PATH
-5. Install Inno Setup Version 4 QuickStart Pack <ispack-4.2.7.exe>. 
+5. While you're in your .bash_profile, add the following line to add 
+   buildscript to your Ruby search path:
+   export RUBYLIB=/home/brian/buildscript
+5. Install Inno Setup Version 5 QuickStart Pack <ispack-5.2.2.exe>. 
    Note: Make sure you install the preprocessor and ISTool, and that it's all
          installed in C:\Program Files\.
-   Note: This may be hard to find, as it's obsolete now. Inno Setup 5 may
-   or may not be an acceptable substitute. 
 6. Install RubyGems <http://rubygems.rubyforge.org>.
 7. gem install rake
-8. Run rake in this directory to execute the test suite, make sure the tests 
+8. gem install termios
+9. Edit your Path environment variable in Windows (Control Panel > System 
+   > Advanced > Environment Variables > System Variables > Path) to include 
+   C:\Program Files\Microsoft Visual Studio 8\SDK\v2.0\Bin
+10.Run rake in this directory to execute the test suite, make sure the tests 
    pass. 
    Note: If there are errors about being unable to remap DLLs, then install
          the Cygwin package utils/rebase, and read the readme in 

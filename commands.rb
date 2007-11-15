@@ -4,6 +4,21 @@ def cvs command, *args
   run 'cvs', command.to_s, *args
 end
 
+# Run +svn+ with the specified arguments.
+#   svn :checkout, 'MyProgram'
+def svn command, *args
+  run 'svn', command.to_s, *args
+end
+
+# Check out a project from SVN, and tag it with the release_id of this
+# build.  This will always checkout from /trunk, and tag to 
+# /tags/builds/#{release_id}
+def svn_co_and_tag working_copy, svn_base, release_id
+  svn :co, "#{svn_base}/trunk", working_copy
+  svn(:copy, '-m', "Tagging build #{release_id}", working_copy, 
+      "#{svn_base}/tags/builds/#{release_id}")
+end
+
 # Build an installer using Inno Setup 4, which must be installed in
 # the default location.  For best results, run this from the directory
 # containing your application.
@@ -85,5 +100,4 @@ def upload_files_for_updater(update_ssh_host, update_path,
   server.run('ruby', "-I#{buildscript_temp}", 
              "#{buildscript_temp}/build_update_server.rb",
              program_temp, update_path)
-  server.run('rm', '-rf', program_temp, buildscript_temp)
 end
