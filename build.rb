@@ -226,8 +226,7 @@ class Build
     heading "Building ISO for CD #{number}"
     cd cd_dir do
       iso_file = "../CD #{number}.iso"
-      files = Dir.entries('.').select {|name| name != '.' && name != '..'}
-      extra_args = mkisofs_hidden(number) + files 
+      extra_args = mkisofs_hidden(number) + ['.']
       run 'mkisofs', '-J', '-R', '-o', iso_file, *extra_args
       release iso_file
     end
