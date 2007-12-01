@@ -65,6 +65,10 @@ module Buildscript
   def sign_file path, description=nil, description_url=nil
     $build.sign_file path, description, description_url
   end
+  # See Build#sign_file_with_gpg
+  def sign_file_with_gpg path
+    $build.sign_file_with_gpg path
+  end
   # See Build#release.
   def release(path, options={}) $build.release(path, options) end
   # See RemoteHost#initialize
@@ -76,5 +80,5 @@ module Buildscript
 
   module_function :start_build, :finish_build_and_upload_files
   module_function :heading, :run, :sign?, :dirty_build?, :release_build?
-  module_function :sign_file, :release, :release_id
+  module_function :sign_file, :sign_file_with_gpg, :release, :release_id
 end

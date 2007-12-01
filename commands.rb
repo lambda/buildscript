@@ -81,6 +81,7 @@ def generate_manifest_files iss_file, update_url
     f.write(iss.spec_file("Build" => release_id || "DIRTY", 
                           "Update-URL" => update_url))
   end
+  sign_file_with_gpg 'release.spec'
 end
 
 # Copy files to update server, and put them in the right places for us to

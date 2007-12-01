@@ -99,7 +99,16 @@ class Build
                            :description => description,
                            :description_url => description_url)
   end
-  
+
+  # If code signing is enabled, sign the specified file with GnuPG.
+  def sign_file_with_gpg path
+    return unless sign?
+    CodeSigning::sign_file_with_gpg(path,
+                                    :password => @signing_key_password,
+                                    :homedir =>
+                                      File.dirname(@signing_key_path))
+  end
+
   # Indicate that a file or directory should be included in our release.
   #
   # +subdir+:: Copy _path_ into the specified subdirectory of #release_subdir.

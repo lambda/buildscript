@@ -35,6 +35,7 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
     
     assert_include (root+"manifests").entries, Pathname.new("base")
     assert_include manifest_dir.entries, Pathname.new("release.spec")
+    assert_include manifest_dir.entries, Pathname.new("release.spec.sig")
     assert_include manifest_dir.entries, Pathname.new("MANIFEST.base")
     assert_include manifest_dir.entries, Pathname.new("MANIFEST.sub")
 

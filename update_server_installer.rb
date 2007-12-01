@@ -35,6 +35,7 @@ class UpdateServerInstaller
       cp file, @manifest_dir
     end
     cp @spec_file, @manifest_dir    
+    cp "#{@spec_file}.sig", @manifest_dir
   end
 
   def populate_pool

@@ -1,9 +1,12 @@
 require 'rubygems'
 require_gem 'termios'
 require 'termios'
+require 'child_process'
 
-# Support for singing code using Authenticode.  This only works with
-# Cygwin Ruby under Windows, AFAIK.
+# Support for singing code using Authenticode and GPG.  This only works
+# with Cygwin Ruby under Windows, AFAIK.
+#
+# TODO - Some test suites would be nice.
 module CodeSigning
 
   #========================================================================
@@ -67,7 +70,31 @@ module CodeSigning
     system 'signtool', 'sign', *(flags + [file]) or
       raise 'Error running signtool'
   end
-  
+
+  # Sign a file using GPG.  This will create a detached *.sig file.
+  # Keyrings are assumed to be found in ':homedir', and the default key
+  # will be used.
+  def self.sign_file_with_gpg file, options
+    homedir = options[:homedir] || raise('Must specify homedir')
+    password = options[:password] || raise('Must specify password')
+
+    args = ["#{homedir}/gpg", '--homedir', homedir, '--batch', '--no-tty',
+            '--yes', '--passphrase-fd', '0', '--detach-sign', file]
+
+    # TODO - This bears a close relation to the code in report.rb, but we
+    # need to pass in a password.  Maybe we could combine the two routines
+    # sensibly?
+    ChildProcess.exec(:combine_output => true, *args) do |child|
+      child.in.puts password
+      until child.out.eof?
+        puts child.out.gets
+      end
+      unless child.wait.success?
+        raise "Error running gpg"
+      end
+    end
+  end
+
   # Look for a specified *.pfx keyfile on the root level of any removable
   # drives.  The theory here is that our *.pfx key lives on a USB stick.
   def self.find_key name
