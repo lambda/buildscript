@@ -51,5 +51,7 @@ class UpdateServerInstaller
   def symlink_staging_spec
     ln_sf((@manifest_dir + "release.spec").expand_path, 
           @dest + "staging.spec")
+    ln_sf((@manifest_dir + "release.spec.sig").expand_path, 
+          @dest + "staging.spec.sig")
   end
 end

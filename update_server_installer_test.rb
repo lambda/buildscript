@@ -40,6 +40,7 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
     assert_include manifest_dir.entries, Pathname.new("MANIFEST.sub")
 
     assert (root+"staging.spec").exist? # check that it points to something
+    assert (root+"staging.spec.sig").exist? # check that it points to something
     assert_equal <<EOF, (root+"staging.spec").read
 Update-URL: http://www.example.com/updates/
 Build: base
@@ -63,6 +64,7 @@ EOF
     # Simulate actually releasing an update, which consists of copying 
     # staging.spec to release.spec
     copy_entry root + "staging.spec", root + "release.spec"
+    copy_entry root + "staging.spec.sig", root + "release.spec.sig"
     
     update_installer = UpdateServerInstaller.new("updater-fixtures/update",
                                                  "test_build_tmp")
@@ -86,6 +88,7 @@ EOF
     assert_include update_manifest_dir.entries, Pathname.new("MANIFEST.sub")
 
     assert (root+"release.spec").exist? # check that it points to something
+    assert (root+"release.spec.sig").exist? # check that it points to something
     assert_equal <<EOF, (root+"release.spec").read
 Update-URL: http://www.example.com/updates/
 Build: base
@@ -95,6 +98,7 @@ Build: base
 EOF
 
     assert (root+"staging.spec").exist? # check that it points to something
+    assert (root+"staging.spec.sig").exist? # check that it points to something
     assert_equal <<EOF, (root+"staging.spec").read
 Update-URL: http://www.example.com/updates/
 Build: update
