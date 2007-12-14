@@ -192,7 +192,7 @@ class Build
 
     # TODO - Temporary code to print a hexdigest of the password so that
     # the person running the build has a chance of detecting bad passwords.
-    digest = Digest::SHA1.new(@signing_key_password).hexdigest
+    digest = Digest::SHA1.hexdigest(@signing_key_password)
     puts "\n    PLEASE CONFIRM PASSWORD DIGEST:\n\n    #{digest}\n\n"
   end
 
