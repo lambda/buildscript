@@ -88,10 +88,10 @@ end
 # update from. 
 # TODO - could probably still use some refactoring, as could MANIFEST section
 # TODO - don't copy .svn directories
-def upload_files_for_updater(update_ssh_host, update_path,
+def upload_files_for_updater(update_ssh_host, update_ssh_user, update_path,
                              update_temp_path, program_unix_name)
                              
-  server = remote_host(update_ssh_host)
+  server = remote_host(update_ssh_host, :user => update_ssh_user)
   program_temp = "#{update_temp_path}/#{program_unix_name}"
   buildscript_temp = "#{update_temp_path}/buildscript"
   
@@ -99,7 +99,7 @@ def upload_files_for_updater(update_ssh_host, update_path,
   server.upload("#{buildscript_source_dir}/", buildscript_temp,
                 :exclude => '.svn')
   server.run('chmod', '-R', 'a+r', program_temp, buildscript_temp)
-  server.run('chmod', '-R', 'ug+w', program_temp, buildscript_temp)
+  server.run('chmod', '-R', 'ug+wX', program_temp, buildscript_temp)
   server.run('ruby', "-I#{buildscript_temp}", 
              "#{buildscript_temp}/build_update_server.rb",
              program_temp, update_path)

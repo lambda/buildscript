@@ -4,10 +4,12 @@ class RemoteHost
   def initialize hostname, options
     @host = hostname
     @runner = options[:runner]
+    @user = options[:user]
+    @user_host = if @user then "#{@user}@#{@host}" else @host end 
   end
 
   def run *command_line
-    @runner.run('ssh', @host, *command_line)
+    @runner.run('ssh', @user_host, *command_line)
   end
 
   def upload src, dst, options={}
@@ -15,7 +17,7 @@ class RemoteHost
     if options[:exclude]
       args += ["--exclude=#{options[:exclude]}"]
     end
-    args += [src, "#{@host}:#{dst}"]
+    args += [src, "#{@user_host}:#{dst}"]
     @runner.run('rsync', *args)
   end
 end

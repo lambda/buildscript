@@ -72,7 +72,9 @@ module Buildscript
   # See Build#release.
   def release(path, options={}) $build.release(path, options) end
   # See RemoteHost#initialize
-  def remote_host(host) RemoteHost.new(host, :runner => $build) end
+  def remote_host(host, options={}) 
+    RemoteHost.new(host, options.merge( {:runner => $build} )) 
+  end
 
   def buildscript_source_dir() $_buildscript_source_dir end
   
