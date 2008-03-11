@@ -104,3 +104,10 @@ def upload_files_for_updater(update_ssh_host, update_ssh_user, update_path,
              "#{buildscript_temp}/build_update_server.rb",
              program_temp, update_path)
 end
+
+# Create a tarball of directory dir, named dir.tar.gz
+def make_tarball dir
+  tarball = "#{dir}.tar.gz"
+  run 'tar', 'czf', tarball, dir
+  release tarball, :cd => 1
+end
