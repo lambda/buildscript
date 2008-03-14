@@ -105,9 +105,18 @@ def upload_files_for_updater(update_ssh_host, update_ssh_user, update_path,
              program_temp, update_path)
 end
 
-# Create a tarball of directory dir, named dir.tar.gz
+# Create a tarball of directory dir, named dir.tar.gz, and mark it for
+# release
 def make_tarball dir
   tarball = "#{dir}.tar.gz"
   run 'tar', 'czf', tarball, dir
   release tarball, :cd => 1
+end
+
+# Create a ZIP file of directory dir, named dir.zip, and mark it for
+# release
+def make_zipfile dir
+  zipfile = "#{dir}.zip"
+  run 'zip', '-r', zipfile, dir
+  release zipfile, :cd => 1
 end
