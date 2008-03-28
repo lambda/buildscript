@@ -1,5 +1,5 @@
 require 'rubygems'
-require_gem 'termios'
+gem 'termios'
 require 'termios'
 require 'child_process'
 
