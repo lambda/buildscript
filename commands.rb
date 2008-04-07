@@ -10,6 +10,12 @@ def svn command, *args
   run 'svn', command.to_s, *args
 end
 
+# Run +git+ with the specified arguments.
+#   git :clone, 'git://imlsrc.dartmouth.edu/program'
+def git command, *args
+  run 'git', command.to_s, *args
+end
+
 # Check out a project from SVN, and tag it with the release_id of this
 # build.  This will always checkout from /trunk, and tag to 
 # /tags/builds/#{release_id}
