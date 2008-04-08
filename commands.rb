@@ -111,18 +111,56 @@ def upload_files_for_updater(update_ssh_host, update_ssh_user, update_path,
              program_temp, update_path)
 end
 
-# Create a tarball of directory dir, named dir.tar.gz, and mark it for
-# release
-def make_tarball dir
-  tarball = "#{dir}.tar.gz"
-  run 'tar', 'czf', tarball, dir
+# Create a tarball of directory dir, named dir.tar.gz by default, and
+# mark it for release, excluding any version control files as well as
+# any files explicitly excluded.
+def make_tarball dir, options={}
+  options[:filename] = options[:filename] || "#{dir}.tar.gz"
+  make_tarball_from_files [dir], options
+end
+
+def exclude_each exclude
+  if (exclude)
+    if (exclude.is_a? Array)
+      exclude.each do |glob|
+        yield glob
+      end
+    else
+      yield exclude
+    end
+  end
+end
+
+
+# Create a tarball of the given files, and mark it for release,
+# excluding any version control files as well as any files explicitly
+# excluded.
+def make_tarball_from_files files, options={}
+  tarball = options[:filename]
+  args = ['czf', tarball, '--exclude-vcs']
+  exclude_each options[:exclude] do |exclude|
+    args.push '--exclude', exclude
+  end
+  args.concat files
+  run 'tar', *args
   release tarball, :cd => 1
 end
 
-# Create a ZIP file of directory dir, named dir.zip, and mark it for
-# release
-def make_zipfile dir
-  zipfile = "#{dir}.zip"
-  run 'zip', '-r', zipfile, dir
+# Create a ZIP file of directory dir, named dir.zip by default, and
+# mark it for release, excluding any version control files as well as
+# any files explicitly excluded.
+#
+# Note that excludes work a bit differently for zip; you need to pass
+# a glob that matches the full path, excluding a directory does not
+# actually exclude the files within it, you must exclude them with a
+# glob as well, and in order to exclude a directory, you need to
+# include the trailing slash.
+def make_zipfile dir, options={}
+  zipfile = options[:filename] || "#{dir}.zip"
+  excludes = ['-x', '*/.git/*', '-x', '*/.gitignore']
+  exclude_each options[:excludes] do |exclude|
+    excludes.push '-x', exclude
+  end
+  run 'zip', '-r', zipfile, dir, *excludes
   release zipfile, :cd => 1
 end
