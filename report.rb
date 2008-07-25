@@ -1,4 +1,4 @@
-require 'child_process'
+require 'buildscript/child_process'
 
 # A list of commands that have been run, and their output.
 class Report

@@ -1,5 +1,5 @@
-require 'build'
-require 'remote_host'
+require 'buildscript/build'
+require 'buildscript/remote_host'
 require 'pathname'
 
 # Calculate this now, while we have a fighting chance of resolving relative
@@ -8,7 +8,7 @@ $_buildscript_source_dir = Pathname.new(File.dirname(__FILE__)).realpath
 
 # Include this module to write build scripts in a domain-specific language.
 #
-#   require 'buildscript'
+#   require 'buildscript/buildscript'
 #   include Buildscript
 #
 #   start_build :build_dir => 'c:/build/myproject'

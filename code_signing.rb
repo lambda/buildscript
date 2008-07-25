@@ -1,7 +1,7 @@
 require 'rubygems'
 gem 'termios'
 require 'termios'
-require 'child_process'
+require 'buildscript/child_process'
 
 # Support for singing code using Authenticode and GPG.  This only works
 # with Cygwin Ruby under Windows, AFAIK.

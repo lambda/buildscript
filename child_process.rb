@@ -1,4 +1,4 @@
-require 'assert'
+require 'buildscript/assert'
 
 # A less-broken replacement for Ruby's miscellaneous _popen_, _Open3_, and
 # other modules for spawning child processes.  Works on Cygwin (and almost

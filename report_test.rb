@@ -1,4 +1,4 @@
-require 'report'
+require 'buildscript/report'
 require 'test/unit'
 
 # Test our Report class.

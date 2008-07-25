@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'build'
+require 'buildscript/build'
 
 module AbstractBuildTest 
   include FileUtils

@@ -2,10 +2,10 @@ require 'forwardable'
 require 'pathname'
 require 'digest/sha1'
 
-require 'child_process'
-require 'build_utils'
-require 'report'
-require 'code_signing'
+require 'buildscript/child_process'
+require 'buildscript/build_utils'
+require 'buildscript/report'
+require 'buildscript/code_signing'
 
 # Implements a mini-language for describing one-button builds.
 class Build

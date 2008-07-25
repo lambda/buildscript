@@ -1,4 +1,4 @@
-require 'child_process'
+require 'buildscript/child_process'
 
 class RemoteHost
   def initialize hostname, options

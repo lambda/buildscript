@@ -1,4 +1,4 @@
-require 'child_process'
+require 'buildscript/child_process'
 require 'test/unit'
 
 # Test the ChildProcess class to make sure that it works.

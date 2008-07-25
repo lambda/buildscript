@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'manifest_parser'
+require 'buildscript/manifest_parser'
 require 'pathname'
 require 'fileutils'
 

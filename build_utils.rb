@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'find'
-require 'child_process'
+require 'buildscript/child_process'
 
 # Assorted functions which are helpful for a build.
 module BuildUtils

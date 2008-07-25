@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'inno_setup'
+require 'buildscript/inno_setup'
 require 'fileutils'
 
 class InnoSetupTest < Test::Unit::TestCase

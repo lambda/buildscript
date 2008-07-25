@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'pathname'
-require 'child_process'
-require 'manifest_parser'
+require 'buildscript/child_process'
+require 'buildscript/manifest_parser'
 
 class UpdateServerInstaller
   include ManifestParser

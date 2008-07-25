@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'update_server_installer'
+require 'buildscript/update_server_installer'
 require 'pathname'
 require 'fileutils'
 
