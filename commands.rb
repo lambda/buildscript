@@ -40,13 +40,13 @@ def inno_setup_5 iss_file, options={}
   run 'c:/Program Files/Inno Setup 5/iscc', iss_file, *defines
 end
 
-# Launch Tamale and have it compile all the Scheme scripts in the current
+# Launch Halyard and have it compile all the Scheme scripts in the current
 # directory.  Automatically manages the TRUST-PRECOMPILED file.
 def compile_scheme_scripts
   rm_f 'TRUST-PRECOMPILED'
   # We need to give a real path here, because "." will cause problems for
   # the engine.  And it needs to be a Windows path, not a Cygwin path!
-  run './Tamale', '-e', '(exit-script)', absolute_path(pwd)
+  run './engine/win32/Halyard', '-e', '(exit-script)', absolute_path(pwd)
   run 'touch', 'TRUST-PRECOMPILED'
 end
 
@@ -76,7 +76,7 @@ end
 # Include update_url in the manifest files, so that the installed program
 # knows where to find updates.
 def generate_manifest_files iss_file, update_url
-  iss = InnoSetup::SourceFile.new(iss_file, 'CD_INSTALLER' => 1)
+  iss = InnoSetup::SourceFile.new(iss_file, Dir.getwd, 'CD_INSTALLER' => 1)
   iss.components.each do |name, component|
     next unless component.includes_manifest?
     manifest = component.manifest
@@ -106,7 +106,7 @@ def upload_files_for_updater(update_ssh_host, update_ssh_user, update_path,
                 :exclude => '.svn')
   server.run('chmod', '-R', 'a+r', program_temp, buildscript_temp)
   server.run('chmod', '-R', 'ug+wX', program_temp, buildscript_temp)
-  server.run('ruby', "-I#{buildscript_temp}", 
+  server.run('ruby', "-I#{update_temp_path}", 
              "#{buildscript_temp}/build_update_server.rb",
              program_temp, update_path)
 end

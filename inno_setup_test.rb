@@ -66,7 +66,8 @@ __EOI__
 
   # Parse an actual *.iss file and see how far we get.
   def test_source_file
-    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss', 'EXTRA_MEDIA' => 1
+    iss = InnoSetup::SourceFile::new('fixtures/sample.iss', 'fixtures',
+                                     'EXTRA_MEDIA' => 1)
     assert_instance_of Hash, iss.components
     assert_equal %w(base media), iss.components.values.map {|c| c.name }.sort
     fs = iss.file_sets
@@ -88,7 +89,8 @@ __EOI__
 
   # Generate a manifest file.
   def test_manifest
-    iss = InnoSetup::SourceFile::new 'fixtures/sample.iss', 'EXTRA_MEDIA' => 1
+    iss = InnoSetup::SourceFile::new('fixtures/sample.iss', 'fixtures',
+                                     'EXTRA_MEDIA' => 1)
 
     assert !iss.components['base'].includes_manifest?
     assert iss.components['media'].includes_manifest?

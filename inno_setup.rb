@@ -16,8 +16,8 @@ module InnoSetup
     attr_reader :file_sets
 
     # Read and parse the +*.iss+ file at _path_.
-    def initialize path, defines
-      @base_dir = File::dirname path
+    def initialize path, base_dir, defines
+      @base_dir = base_dir
       source = File::open(path, "r") {|f| f.read }
       preprocessed = InnoSetup::preprocess(source, defines)
       sections = InnoSetup::split_into_sections(preprocessed)

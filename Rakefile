@@ -1,5 +1,4 @@
 # Type 'rake -H' for help, or 'rake -T' for a list of tasks.
-
 require 'rake/testtask'
 
 SRC = FileList['*.rb']
@@ -9,7 +8,10 @@ task :default => [:test]
 
 desc "Run our test suites"
 Rake::TestTask.new(:test) do |t|
-  #t.libs << 'lib'
+  # All of our files are written assuming that buildscript is a
+  # subdirectory of something in our lib path, so we need to add
+  # .. to our lib path to make everything work.
+  t.libs << '..'
   t.pattern = '*_test.rb'
   t.verbose = true
 end
