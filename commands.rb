@@ -46,7 +46,9 @@ def compile_scheme_scripts
   rm_f 'TRUST-PRECOMPILED'
   # We need to give a real path here, because "." will cause problems for
   # the engine.  And it needs to be a Windows path, not a Cygwin path!
-  run './engine/win32/Halyard', '-e', '(exit-script)', absolute_path(pwd)
+  # We need to be in command line mode, not runtime mode, so we will write
+  # out our file count for our progress bar.
+  run './engine/win32/Halyard', '-c', '(exit-script)', absolute_path(pwd)
   run 'touch', 'TRUST-PRECOMPILED'
 end
 
