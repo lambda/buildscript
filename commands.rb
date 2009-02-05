@@ -65,13 +65,13 @@ end
 # Launch Halyard and have it compile all the Scheme scripts in the current
 # directory.  Automatically manages the TRUST-PRECOMPILED file.
 def compile_scheme_scripts
-  rm_f 'TRUST-PRECOMPILED'
+  rm_f 'config/TRUST-PRECOMPILED'
   # We need to give a real path here, because "." will cause problems for
   # the engine.  And it needs to be a Windows path, not a Cygwin path!
   # We need to be in command line mode, not runtime mode, so we will write
   # out our file count for our progress bar.
   run './engine/win32/Halyard', '-c', '(exit-script)', absolute_path(pwd)
-  run 'touch', 'TRUST-PRECOMPILED'
+  run 'touch', 'config/TRUST-PRECOMPILED'
 end
 
 # Search through _dirs_ for files referenced in an Inno Setup script as
