@@ -9,9 +9,6 @@ builder. These instructions assume that you already have a working Cygwin.
          patch, and try again. 
 4. Add the following line to your .bash_profile in your Cygwin home directory:
    export PATH=/opt/schily/bin:$PATH
-5. While you're in your .bash_profile, add the following line to add 
-   buildscript to your Ruby search path:
-   export RUBYLIB=/home/brian/buildscript
 5. Install Inno Setup Version 5 QuickStart Pack <ispack-5.2.2.exe>. 
    Note: Make sure you install the preprocessor and ISTool, and that it's all
          installed in C:\Program Files\.
