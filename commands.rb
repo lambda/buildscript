@@ -47,6 +47,18 @@ def svn_co_and_tag working_copy, svn_base, release_id
       "#{svn_base}/tags/builds/#{release_id}")
 end
 
+# Clone a git project, update submodules, and tag that version with
+# the release_id of this build.  This will always check out master,
+# and always tag to builds/#{release_id}
+def git_clone_and_tag working_copy, git_url, release_id
+  git :clone, git_url, working_copy
+  cd working_copy do
+    git :submodule, 'update', '--init'
+    git :tag, "builds/#{release_id}"
+    git :push, 'origin', "builds/#{release_id}:builds/#{release_id}"
+  end
+end
+
 # Build an installer using Inno Setup 4, which must be installed in
 # the default location.  For best results, run this from the directory
 # containing your application.

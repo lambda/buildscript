@@ -32,6 +32,7 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
   FooHash = '855426068ee8939df6bce2c2c4b1e7346532a133'
 
   def setup
+    rm_rf 'test_build_tmp'
     mkdir_p 'test_build_tmp'
   end
 
