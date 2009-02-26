@@ -23,7 +23,6 @@
 require 'fileutils'
 require 'pathname'
 require 'time'
-require 'buildscript/child_process'
 require 'buildscript/manifest_parser'
 
 class UpdateServer
