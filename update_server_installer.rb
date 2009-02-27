@@ -69,7 +69,9 @@ class UpdateServerInstaller
     mkdir_p pool_dir
     @full_manifest.each do |manifest_entry|
       unless (pool_dir + manifest_entry.hash).exist? 
-        cp(@source + manifest_entry.filename, pool_dir + manifest_entry.hash)
+        dest_file = pool_dir + manifest_entry.hash
+        cp(@source + manifest_entry.filename, dest_file)
+        chmod 0444, dest_file
       end
     end
   end

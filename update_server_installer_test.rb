@@ -60,6 +60,7 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
   def check_pool hash, contents
     assert @pool.directory?
     assert_equal contents, (@pool+hash).read
+    assert !(@pool+hash).writable?
   end
 
   def check_spec file, contents
