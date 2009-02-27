@@ -32,6 +32,7 @@ class UpdateServerInstaller
     @source = Pathname.new(source_path)
     @dest = Pathname.new(dest_path)
     @spec_file = @source + "release.spec"
+    @sig_file = @source + "release.spec.sig"
     @spec = parse_spec_file(@spec_file.read)
     @manifest_files = []
     @full_manifest = []
@@ -52,12 +53,15 @@ class UpdateServerInstaller
   def build_manifest_dir
     @manifest_dir = @dest + "manifests" + @spec["Build"]
     mkdir_p @manifest_dir
+
+    files_to_copy = @manifest_files + [@spec_file, @sig_file]
     
-    @manifest_files.each do |file|
+    files_to_copy.each do |file|
       cp file, @manifest_dir
+      chmod 0444, @manifest_dir+file.basename
     end
-    cp @spec_file, @manifest_dir    
-    cp "#{@spec_file}.sig", @manifest_dir
+
+    chmod 0555, @manifest_dir
   end
 
   def populate_pool

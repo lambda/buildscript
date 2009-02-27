@@ -40,6 +40,7 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
   end
 
   def teardown
+    chmod_R 0755, 'test_build_tmp'
     rm_rf 'test_build_tmp'
   end
 
@@ -47,10 +48,12 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
     manifest_dir = @manifests + build_id
     assert @manifests.directory?
     assert manifest_dir.directory?
+    assert !manifest_dir.writable?
     
     ['release.spec', 'release.spec.sig', 
      'MANIFEST.base', 'MANIFEST.sub'].each do |file|
       assert_include manifest_dir.entries, Pathname.new(file)
+      assert !(manifest_dir+file).writable?
     end
   end
 
