@@ -34,85 +34,90 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
   def setup
     rm_rf 'test_build_tmp'
     mkdir_p 'test_build_tmp'
+    @root = Pathname.new('test_build_tmp')
+    @pool = @root + 'pool'
+    @manifests = @root + 'manifests'
   end
 
   def teardown
     rm_rf 'test_build_tmp'
   end
 
-  # TODO - we can probably drop this test, since the next one tests this 
-  # and more.
+  def check_manifest_dir build_id
+    manifest_dir = @manifests + build_id
+    assert @manifests.directory?
+    assert manifest_dir.directory?
+    
+    ['release.spec', 'release.spec.sig', 
+     'MANIFEST.base', 'MANIFEST.sub'].each do |file|
+      assert_include manifest_dir.entries, Pathname.new(file)
+    end
+  end
+
+  def check_pool hash, contents
+    assert @pool.directory?
+    assert_equal contents, (@pool+hash).read
+  end
+
+  def check_spec file, contents
+    assert (@root+file).exist? # check that it points to something
+    assert (@root+(file+".sig")).exist? # check that it points to something
+    assert_equal contents, (@root+file).read
+  end
+
+  def test_build_manifest_dir
+    installer = UpdateServerInstaller.new('updater-fixtures/base', 
+                                          'test_build_tmp')
+    installer.build_manifest_dir
+
+    check_manifest_dir 'base'
+  end
+
+  def test_populate_pool
+    installer = UpdateServerInstaller.new('updater-fixtures/base', 
+                                          'test_build_tmp')
+    installer.populate_pool
+    
+    check_pool NullHash, ''
+  end
+
   def test_server_installer_base
     installer = UpdateServerInstaller.new('updater-fixtures/base',
                                           'test_build_tmp')
     installer.build_update_installer
 
-    root = Pathname.new("test_build_tmp")
-    pool = root + "pool"
-    manifest_dir = root + "manifests" + "base"
-    
-    root_list = root.entries
-    assert_include root_list, Pathname.new("staging.spec")
-    assert_include root_list, Pathname.new("manifests")
-    assert_include root_list, Pathname.new("pool")
-    
-    assert_include (root+"manifests").entries, Pathname.new("base")
-    assert_include manifest_dir.entries, Pathname.new("release.spec")
-    assert_include manifest_dir.entries, Pathname.new("release.spec.sig")
-    assert_include manifest_dir.entries, Pathname.new("MANIFEST.base")
-    assert_include manifest_dir.entries, Pathname.new("MANIFEST.sub")
-
-    assert (root+"staging.spec").exist? # check that it points to something
-    assert (root+"staging.spec.sig").exist? # check that it points to something
-    assert_equal <<EOF, (root+"staging.spec").read
+    check_spec 'staging.spec', <<EOF
 Update-URL: http://www.example.com/updates/
 Build: base
 
 142b5a7005ee1b9dc5f1cc2ec329acd0ad3cc9f6 110 MANIFEST.sub
 82b90fb155029800cd45f08d32df240d672dfd5b 102 MANIFEST.base
 EOF
-    assert_equal "", (pool+NullHash).read
   end
 
+  # This is a test of an entire process, from building an update,
+  # releasing one, and building a new one.
   def test_server_installer_update
-    root = Pathname.new("test_build_tmp")
-    pool = root + "pool"
-    base_manifest_dir = root + "manifests" + "base"
-    update_manifest_dir = root + "manifests" + "update"
-
     base_installer = UpdateServerInstaller.new("updater-fixtures/base",
                                                "test_build_tmp")
     base_installer.build_update_installer
 
     # Simulate actually releasing an update, which consists of copying 
     # staging.spec to release.spec
-    copy_entry root + "staging.spec", root + "release.spec"
-    copy_entry root + "staging.spec.sig", root + "release.spec.sig"
+    copy_entry @root + "staging.spec", @root + "release.spec"
+    copy_entry @root + "staging.spec.sig", @root + "release.spec.sig"
     
     update_installer = UpdateServerInstaller.new("updater-fixtures/update",
                                                  "test_build_tmp")
     update_installer.build_update_installer
 
-    root_list = root.entries
-    assert_include root_list, Pathname.new("staging.spec")
-    assert_include root_list, Pathname.new("release.spec")
-    assert_include root_list, Pathname.new("manifests")
-    assert_include root_list, Pathname.new("pool")
+    check_manifest_dir 'base'
+    check_manifest_dir 'update'
 
-    assert_include (root+"manifests").entries, Pathname.new("base")
-    assert_include (root+"manifests").entries, Pathname.new("update")
+    check_pool NullHash, ''
+    check_pool FooHash, "foo\r\n"
 
-    assert_include base_manifest_dir.entries, Pathname.new("release.spec")
-    assert_include base_manifest_dir.entries, Pathname.new("MANIFEST.base")
-    assert_include base_manifest_dir.entries, Pathname.new("MANIFEST.sub")
-
-    assert_include update_manifest_dir.entries, Pathname.new("release.spec")
-    assert_include update_manifest_dir.entries, Pathname.new("MANIFEST.base")
-    assert_include update_manifest_dir.entries, Pathname.new("MANIFEST.sub")
-
-    assert (root+"release.spec").exist? # check that it points to something
-    assert (root+"release.spec.sig").exist? # check that it points to something
-    assert_equal <<EOF, (root+"release.spec").read
+    check_spec 'release.spec', <<EOF
 Update-URL: http://www.example.com/updates/
 Build: base
 
@@ -120,18 +125,13 @@ Build: base
 82b90fb155029800cd45f08d32df240d672dfd5b 102 MANIFEST.base
 EOF
 
-    assert (root+"staging.spec").exist? # check that it points to something
-    assert (root+"staging.spec.sig").exist? # check that it points to something
-    assert_equal <<EOF, (root+"staging.spec").read
+    check_spec 'staging.spec', <<EOF
 Update-URL: http://www.example.com/updates/
 Build: update
 
 5983ca11eaf522f579bf3dfbd998ecb557d86eed 166 MANIFEST.sub
 9e25206db9d0379e536cd0ff9ef953e1f36b6898 102 MANIFEST.base
 EOF
-
-    assert_equal "", (pool+NullHash).read
-    assert_equal "foo\r\n", (pool+FooHash).read
   end
 
   def assert_include array, item, message = nil
