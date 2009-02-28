@@ -29,8 +29,19 @@ require 'buildscript/manifest_parser'
 class UpdateServer
   include ManifestParser
 
-  def initialize updater_dir
+  def UpdateServer.parse_log str
+    lines = []
+    str.each_line do |line|
+      fields = line.split(" ", 5)
+      lines += [{ :before => fields[0], :after => fields[1], :user => fields[2],
+                 :time => fields[3], :notes => fields[4] && fields[4].chomp }]
+    end
+    lines
+  end
+  
+  def initialize updater_dir, opts = { }
     @root = Pathname.new(updater_dir)
+    @user = opts[:user] or ENV["USER"]
   end
 
   def release_from_staging notes=""
@@ -63,7 +74,7 @@ class UpdateServer
     time = Time.now.xmlschema # Time in YYYY-MM-DDTHH:MM:SS[+-]TZ format
 
     File.open(log, 'a') do |file|
-      file.puts "#{old_build} #{new_build} #{ENV["USER"]} #{time} #{notes}"
+      file.puts "#{old_build} #{new_build} #{@user} #{time} #{notes}"
     end
 
     rm dst_file if dst_file.exist?
@@ -76,7 +87,7 @@ end
 class UpdateServerInstaller
   include ManifestParser
 
-  def initialize source_path, dest_path
+  def initialize source_path, dest_path, opts = { }
     @source = Pathname.new(source_path)
     @dest = Pathname.new(dest_path)
     @spec_file = @source + "release.spec"
@@ -90,6 +101,7 @@ class UpdateServerInstaller
       manifest = parse_manifest(manifest_file.read)
       @full_manifest += manifest
     end
+    @user = opts[:user]
   end
 
   def build_update_installer
@@ -125,7 +137,7 @@ class UpdateServerInstaller
   end
 
   def symlink_staging_spec
-    server = UpdateServer.new(@dest)
+    server = UpdateServer.new(@dest, :user => @user)
     release_spec = (@manifest_dir+"release.spec").relative_path_from(@dest)
 
     # Path names are relative to @dest

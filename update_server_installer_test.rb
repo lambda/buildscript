@@ -76,13 +76,13 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
     assert_equal build_id, spec["Build"] # check that we have the right spec
   end
 
-  def check_spec_log spec, before, after, notes=nil
+  def check_spec_log spec, before, after, fields={ }
     log_file = @root+(spec+'.log')
-    log_file.read.each_line do |line|
-      parsed = line.split(' ', 5)
-      if (parsed[0] == before && parsed[1] == after)
-        if notes
-          assert_equal notes, parsed[4].chomp
+
+    UpdateServer.parse_log(log_file.read).each do |line|
+      if (line[:before] == before && line[:after] == after)
+        fields.each do |key, val|
+          assert_equal val, line[key]
         end
         return
       end
@@ -126,10 +126,15 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
   # This is a test of an entire process, from building an update,
   # releasing one, and building a new one.
   def test_server_installer_update
-    base_installer = USI.new("updater-fixtures/base", "test_build_tmp")
+    base_installer = USI.new("updater-fixtures/base", "test_build_tmp", 
+                             :user => 'test-builder')
     base_installer.build_update_installer
-    UpdateServer.new("test_build_tmp").release_from_staging "v1.0"
-    update_installer = USI.new("updater-fixtures/update", "test_build_tmp")
+
+    update_server = UpdateServer.new("test_build_tmp", :user => 'test-releaser')
+    update_server.release_from_staging "v1.0"
+
+    update_installer = USI.new("updater-fixtures/update", "test_build_tmp",
+                               :user => 'test-builder')
     update_installer.build_update_installer
 
     check_manifest_dir 'base'
@@ -139,10 +144,11 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
     check_pool FooHash, "foo\r\n"
 
     check_spec 'release.spec', 'base'
-    check_spec_log 'release.spec', '<null>', 'base', "v1.0"
+    check_spec_log('release.spec', '<null>', 'base', 
+                   :notes => "v1.0", :user => 'test-releaser')
     check_spec 'staging.spec', 'update'
-    check_spec_log 'staging.spec', '<null>', 'base'
-    check_spec_log 'staging.spec', 'base', 'update'
+    check_spec_log 'staging.spec', '<null>', 'base', :user => 'test-builder'
+    check_spec_log 'staging.spec', 'base', 'update', :user => 'test-builder'
   end
 
   def assert_include array, item, message = nil
