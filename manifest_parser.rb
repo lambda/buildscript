@@ -20,6 +20,8 @@
 #
 # @END_LICENSE
 
+require 'fileutils'
+
 module ManifestParser
   include FileUtils
 

@@ -47,6 +47,10 @@ class UpdateServer
     update_spec_file "staging.spec", "release.spec", notes
   end
 
+  def stage_update build_id, notes=""
+    update_spec_file "manifests/#{build_id}/release.spec", "staging.spec", notes
+  end
+
   def canonical_path file
     if file.symlink?
       file = file.readlink
@@ -137,9 +141,8 @@ class UpdateServerInstaller
 
   def symlink_staging_spec
     server = UpdateServer.new(@dest, :user => @user)
-    release_spec = (@manifest_dir+"release.spec").relative_path_from(@dest)
 
     # Path names are relative to @dest
-    server.update_spec_file(release_spec, "staging.spec")
+    server.stage_update(@spec["Build"], "staging.spec")
   end
 end
