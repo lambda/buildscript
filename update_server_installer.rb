@@ -22,8 +22,56 @@
 
 require 'fileutils'
 require 'pathname'
+require 'time'
 require 'buildscript/child_process'
 require 'buildscript/manifest_parser'
+
+class UpdateServer
+  include ManifestParser
+
+  def initialize updater_dir
+    @root = Pathname.new(updater_dir)
+  end
+
+  def release_from_staging notes=""
+    update_spec_file "staging.spec", "release.spec", notes
+  end
+
+  def canonical_path file
+    if file.symlink?
+      file = file.readlink
+    end
+    
+    file.expand_path
+  end
+
+  def update_spec_file src, dst, notes=""
+    src_file = @root + src
+    src_sig = @root + "#{src}.sig"
+    dst_file = @root + dst
+    dst_sig = @root + "#{dst}.sig"
+
+    log = @root + "#{dst}.log"
+    
+    if dst_file.exist?
+      old_build = parse_spec_file(dst_file.read)["Build"]
+    else
+      old_build = "<null>"
+    end
+
+    new_build = parse_spec_file(src_file.read)["Build"]
+    time = Time.now.xmlschema # Time in YYYY-MM-DDTHH:MM:SS[+-]TZ format
+
+    File.open(log, 'a') do |file|
+      file.puts "#{old_build} #{new_build} #{ENV["USER"]} #{time} #{notes}"
+    end
+
+    rm dst_file if dst_file.exist?
+    ln_s canonical_path(src_file), dst_file
+    rm dst_sig if dst_sig.exist?
+    ln_s canonical_path(src_sig), dst_sig if src_sig.exist?
+  end
+end
 
 class UpdateServerInstaller
   include ManifestParser
@@ -77,9 +125,10 @@ class UpdateServerInstaller
   end
 
   def symlink_staging_spec
-    ln_sf((@manifest_dir + "release.spec").expand_path, 
-          @dest + "staging.spec")
-    ln_sf((@manifest_dir + "release.spec.sig").expand_path, 
-          @dest + "staging.spec.sig")
+    server = UpdateServer.new(@dest)
+    release_spec = (@manifest_dir+"release.spec").relative_path_from(@dest)
+
+    # Path names are relative to @dest
+    server.update_spec_file(release_spec, "staging.spec")
   end
 end

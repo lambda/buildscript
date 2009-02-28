@@ -22,14 +22,17 @@
 
 require 'test/unit'
 require 'buildscript/update_server_installer'
+require 'buildscript/manifest_parser'
 require 'pathname'
 require 'fileutils'
 
 include FileUtils
 
 class UpdateServerInstallerTest < Test::Unit::TestCase
+  include ManifestParser
   NullHash = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
   FooHash = '855426068ee8939df6bce2c2c4b1e7346532a133'
+  USI = UpdateServerInstaller
 
   def setup
     rm_rf 'test_build_tmp'
@@ -63,56 +66,70 @@ class UpdateServerInstallerTest < Test::Unit::TestCase
     assert !(@pool+hash).writable?
   end
 
-  def check_spec file, contents
-    assert (@root+file).exist? # check that it points to something
-    assert (@root+(file+".sig")).exist? # check that it points to something
-    assert_equal contents, (@root+file).read
+  def check_spec file, build_id
+    spec_file = @root+file
+
+    # check that these point to something
+    assert spec_file.exist?, "No spec file" 
+    assert (@root+(file+".sig")).exist?, "No spec sig"
+    spec = parse_spec_file(spec_file.read)
+    assert_equal build_id, spec["Build"] # check that we have the right spec
+  end
+
+  def check_spec_log spec, before, after, notes=nil
+    log_file = @root+(spec+'.log')
+    log_file.read.each_line do |line|
+      parsed = line.split(' ', 5)
+      if (parsed[0] == before && parsed[1] == after)
+        if notes
+          assert_equal notes, parsed[4].chomp
+        end
+        return
+      end
+    end
+    assert false, "Did not find log of #{before} to #{after} in #{log_file}"
   end
 
   def test_build_manifest_dir
-    installer = UpdateServerInstaller.new('updater-fixtures/base', 
-                                          'test_build_tmp')
+    installer = USI.new('updater-fixtures/base', 'test_build_tmp')
     installer.build_manifest_dir
 
     check_manifest_dir 'base'
   end
 
   def test_populate_pool
-    installer = UpdateServerInstaller.new('updater-fixtures/base', 
-                                          'test_build_tmp')
+    installer = USI.new('updater-fixtures/base', 'test_build_tmp')
     installer.populate_pool
     
     check_pool NullHash, ''
   end
 
   def test_server_installer_base
-    installer = UpdateServerInstaller.new('updater-fixtures/base',
-                                          'test_build_tmp')
+    installer = USI.new('updater-fixtures/base', 'test_build_tmp')
     installer.build_update_installer
 
-    check_spec 'staging.spec', <<EOF
-Update-URL: http://www.example.com/updates/
-Build: base
+    check_spec 'staging.spec', 'base'
+    check_spec_log 'staging.spec', '<null>', 'base'
+  end
 
-142b5a7005ee1b9dc5f1cc2ec329acd0ad3cc9f6 110 MANIFEST.sub
-82b90fb155029800cd45f08d32df240d672dfd5b 102 MANIFEST.base
-EOF
+  def test_release_from_staging
+    base_installer = USI.new("updater-fixtures/base", "test_build_tmp")
+    base_installer.build_update_installer
+    UpdateServer.new("test_build_tmp").release_from_staging
+
+    check_spec 'release.spec', 'base'
+    check_spec_log 'release.spec', '<null>', 'base'
+    check_spec 'staging.spec', 'base'
+    check_spec_log 'staging.spec', '<null>', 'base'
   end
 
   # This is a test of an entire process, from building an update,
   # releasing one, and building a new one.
   def test_server_installer_update
-    base_installer = UpdateServerInstaller.new("updater-fixtures/base",
-                                               "test_build_tmp")
+    base_installer = USI.new("updater-fixtures/base", "test_build_tmp")
     base_installer.build_update_installer
-
-    # Simulate actually releasing an update, which consists of copying 
-    # staging.spec to release.spec
-    copy_entry @root + "staging.spec", @root + "release.spec"
-    copy_entry @root + "staging.spec.sig", @root + "release.spec.sig"
-    
-    update_installer = UpdateServerInstaller.new("updater-fixtures/update",
-                                                 "test_build_tmp")
+    UpdateServer.new("test_build_tmp").release_from_staging "v1.0"
+    update_installer = USI.new("updater-fixtures/update", "test_build_tmp")
     update_installer.build_update_installer
 
     check_manifest_dir 'base'
@@ -121,21 +138,11 @@ EOF
     check_pool NullHash, ''
     check_pool FooHash, "foo\r\n"
 
-    check_spec 'release.spec', <<EOF
-Update-URL: http://www.example.com/updates/
-Build: base
-
-142b5a7005ee1b9dc5f1cc2ec329acd0ad3cc9f6 110 MANIFEST.sub
-82b90fb155029800cd45f08d32df240d672dfd5b 102 MANIFEST.base
-EOF
-
-    check_spec 'staging.spec', <<EOF
-Update-URL: http://www.example.com/updates/
-Build: update
-
-5983ca11eaf522f579bf3dfbd998ecb557d86eed 166 MANIFEST.sub
-9e25206db9d0379e536cd0ff9ef953e1f36b6898 102 MANIFEST.base
-EOF
+    check_spec 'release.spec', 'base'
+    check_spec_log 'release.spec', '<null>', 'base', "v1.0"
+    check_spec 'staging.spec', 'update'
+    check_spec_log 'staging.spec', '<null>', 'base'
+    check_spec_log 'staging.spec', 'base', 'update'
   end
 
   def assert_include array, item, message = nil
