@@ -23,30 +23,60 @@
 require 'pathname'
 
 # This reads a projcet configuration file from config/project.conf.
-# Each line has key-value pairs of the form "key = value", where 
-# whitespace before and after the key and value are skipped.
+# The format is a subset of the semi-standard INI file format (of which
+# variations are supported by various Windows utilities, Samba, wxWidgets,
+# and Git).  It supports sections delimited by [ and ], key value pairs
+# separated with an =, and blank lines.  It explicitly errors on common
+# INI syntax that it does not understand, such as "quoted strings", \ 
+# escapes, and comments denoted by ; and #.
 #
-# This is intended to eventually support walking up a directory
-# hierarchy to find the config, and intended to support an INI
-# file format or git config file format, but for now just supports
-# basic key value pairs at a fixed location relative to the working
-# directory.
+# After each section heading, every key is conisdered to be in that
+# section untile the next section heading.  This is represented by the
+# key being stored as "section.key".  Thus,
+#   [section]
+#   key = val
+# is equivalent to
+#   section.key = val
+#
+# When you create a ProjectConfig object, it looks for a config file at
+# config/project.conf.  It would perhaps be nice in the future to search
+# up the directory hierarchy to find the top-level project dir, but it
+# does not do that at this time; it simply looks for the file relative to
+# the current working directory.
 class ProjectConfig
+  KeyRE = /[a-zA-Z0-9._-]+/
+  ValRE = /[^";\\#]*[^";\\# \t]/
   def initialize
     @file = Pathname.new 'config/project.conf'
     unless @file.exist?
-      STDERR.puts "Could not find config/project.conf"
-      exit 1
+      raise "Could not find config/project.conf"
     end
     @items = { }
+    section = nil
     @file.read.each_line do |line|
       l = line.chomp
-      l =~ /[ \t]*([^ \t=]+)[ \t]*=[ \t]*(.*[^ \t])[ \t]*$/
-      @items[$1] = $2
+      case l
+        when /^[ \t]*$/
+          # skip this line, do nothing
+        when /^[ \t]*\[(#{KeyRE})\][ \t]*$/
+          section = $1
+        when /^[ \t]*(#{KeyRE})[ \t]*=[ \t]*(#{ValRE})[ \t]*$/
+          key = if section then section + "." + $1 else $1 end
+          @items[key] = $2
+        else
+          raise <<EOF
+config/project.conf: unrecognized format in line:
+#{line}
+EOF
+      end
     end
   end
 
   def [] key
     @items[key]
+  end
+
+  def print
+    @items.each { |key,val| puts "#{key}=#{val}"}
   end
 end
