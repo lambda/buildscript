@@ -2,7 +2,7 @@
 ;; This file is used by the installer itself.
 Source: helper.txt; Flags: dontcopy
 Source: README.txt; DestDir: {app}; Components: base
-Source: Media\*.txt; DestDir: {app}\Media; Excludes: CVS,.cvsignore,*.bak,.#*,#*,*~; Flags: recursesubdirs; Components: media
+Source: Media\*.txt; DestDir: {app}\Media; Excludes: CVS,.cvsignore,*.bak,.#*,#*,*~,ignore\*\dir,nested\dir; Flags: recursesubdirs; Components: media
 #ifdef EXTRA_MEDIA
 Source: Media2\*; DestDir: {app}\Media; Excludes: CVS,.cvsignore,*.bak,.#*,#*,*~; Flags: recursesubdirs; Components: media
 #endif

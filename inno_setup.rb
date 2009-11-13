@@ -240,16 +240,37 @@ module InnoSetup
       Dir.chdir(dir) { Dir[glob] }
     end
 
-    # If any path in _path_ has a component mentioned in our 'Excludes'
-    # list, then remove that name from our list.  This filters out CVS
-    # directories and whatnot.
+    # If any path in _paths_ has a sequence of components that matches
+    # an equivalent sequence of components (with glob expansion) in
+    # our 'Excludes' list, then remove that name from our list.  This
+    # filters out CVS directories and whatnot.
     def apply_exclusions paths
       paths.reject do |path|
-        path.split("/").any? do |component|
-          excludes.any? do |pattern|
-            File.fnmatch(pattern, component)
+        excludes.any? do |pattern|
+          pattern_components = pattern.split("\\")
+          path_components = path.split("/")
+          match = false
+          if pattern_components[0] == ""
+            raise "Can't handle anchored exclude #{pattern}"
           end
+
+          while (!pattern_components.empty? && !path_components.empty? && 
+                 pattern_components.length < path_components.length)
+            if glob_array_match? pattern_components, path_components
+              match = true
+              break
+            end
+            path_components.shift
+          end
+          
+          match
         end
+      end
+    end
+
+    def glob_array_match? patterns, strings
+      patterns.zip(strings).all? do |pattern, string|
+        File.fnmatch(pattern, string)
       end
     end
 

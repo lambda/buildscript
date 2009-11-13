@@ -102,7 +102,9 @@ __EOI__
 
     # Check some more complicated file sets.
     assert_equal({'fixtures/README.txt' => '{app}/README.txt'}, fs[1].files)
-    assert_equal %W(CVS .cvsignore *.bak .\#* \#* *~), fs[2].excludes
+    assert_equal(%W(CVS .cvsignore *.bak .\#* \#* *~ ignore\\*\\dir 
+                    nested\\dir), 
+                 fs[2].excludes)
     assert_equal({'fixtures/Media/foo.txt' => '{app}/Media/foo.txt',
                   'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt',
                   'fixtures/Media2/sub/w.txt' => '{app}/Media/sub/w.txt'},
