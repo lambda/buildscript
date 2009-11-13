@@ -255,7 +255,7 @@ module InnoSetup
           end
 
           while (!pattern_components.empty? && !path_components.empty? && 
-                 pattern_components.length < path_components.length)
+                 pattern_components.length <= path_components.length)
             if glob_array_match? pattern_components, path_components
               match = true
               break
