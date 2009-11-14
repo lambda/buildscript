@@ -247,30 +247,44 @@ module InnoSetup
     def apply_exclusions paths
       paths.reject do |path|
         excludes.any? do |pattern|
-          pattern_components = pattern.split("\\")
-          path_components = path.split("/")
-          match = false
-          if pattern_components[0] == ""
+          globs = pattern.split("\\")
+          components = path.split("/")
+
+          # Inno Setup includes a feature in which you can anchor excludes at
+          # the root by starting the exclude with a "\".  Since I don't want
+          # to make this more complicated than I have to, I'm not implementing
+          # this feature at this time.
+          if globs[0] == ""
             raise "Can't handle anchored exclude #{pattern}"
           end
-
-          while (!pattern_components.empty? && !path_components.empty? && 
-                 pattern_components.length <= path_components.length)
-            if glob_array_match? pattern_components, path_components
-              match = true
-              break
-            end
-            path_components.shift
-          end
           
-          match
+          globs_match_strings_anywhere? globs, components
         end
       end
     end
 
-    def glob_array_match? patterns, strings
-      patterns.zip(strings).all? do |pattern, string|
-        File.fnmatch(pattern, string)
+    # Try to match an array of globs against an array of strings.  If
+    # the corresponding strings match the corresponding globs, return
+    # true, otherwise strip off the first string and try matching one
+    # level deeper.
+    def globs_match_strings_anywhere? globs, strings
+      while (!globs.empty? && !strings.empty? && 
+             globs.length <= strings.length)
+        if globs_match_strings? globs, strings
+          return true
+        end
+        strings.shift
+      end
+
+      return false
+    end
+
+    # Check if each glob in _globs_ expands to the corresponding
+    # string in _strings_.  _strings_ must be at least as long as
+    # _globs_.
+    def globs_match_strings? globs, strings
+      globs.zip(strings).all? do |glob, string|
+        File.fnmatch(glob, string)
       end
     end
 
