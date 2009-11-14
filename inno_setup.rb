@@ -111,7 +111,7 @@ module InnoSetup
     # For each FileSet in this component, call FileSet#files and merge
     # the results.
     def files
-      merge_hashes(file_sets.map {|fs| fs.files })
+      file_sets.map{|fs| fs.files }.flatten
     end
 
     # Compute the manifest of a set of files.
@@ -120,7 +120,8 @@ module InnoSetup
       result = []
       app_prefix = /^\{app\}\//
       manifest_regexp = /#{manifest_name}$/
-      files.each do |path, installed_path|
+      files.each do |file|
+        path, installed_path = file.source, file.dest
         next unless installed_path =~ app_prefix
         # Skip the MANIFEST file if it already exists. Should only happen 
         # when doing a dirty build. 
@@ -157,16 +158,6 @@ module InnoSetup
       digest = Digest::SHA1.hexdigest(manifest)
       "#{digest} #{manifest.size} #{manifest_name}"
     end
-
-    private
-
-    def merge_hashes hashes
-      result = {}
-      hashes.each do |h|
-        result.merge!(h) {|k,v1,v2| raise "Duplicate hash key: #{k}" }
-      end
-      result
-    end
   end
 
   # A single line from the +[Files]+ section, corresponding to zero or more
@@ -182,6 +173,8 @@ module InnoSetup
     attr_reader :excludes
     # The components to which this FileSet belongs.
     attr_reader :components
+    # The source and destination of a single file.
+    FileCopy = Struct.new(:source, :dest)
 
     # Create a FileSet from the specified _properties_.
     def initialize iss_file, properties
@@ -204,12 +197,12 @@ module InnoSetup
       files = apply_exclusions(expand_glob_in_dir(src_ruby_glob, src_base))
       
       # Build our result list.
-      result = {}
+      result = []
       files.each do |f|
         src = "#{src_base}/#{f}"
         next if File.directory?(src)
         dst = dest_path_for_file f
-        result[src] = dst
+        result.push FileCopy.new(src, dst)
       end
 
       # Fail on empty filesets, unless they're allowed.

@@ -86,6 +86,9 @@ __EOI__
     assert_equal 'bar...', parsed['Components']
   end
 
+  # For convenience
+  FC = InnoSetup::FileSet::FileCopy
+
   # Parse an actual *.iss file and see how far we get.
   def test_source_file
     iss = InnoSetup::SourceFile::new('fixtures/sample.iss', 'fixtures',
@@ -98,17 +101,21 @@ __EOI__
     assert_equal 'helper.txt', fs[0].source
     assert_equal ['dontcopy'], fs[0].flags
     assert_nil fs[0].dest_dir
-    assert_equal({'fixtures/helper.txt' => nil}, fs[0].files)
+    assert_equal([FC.new('fixtures/helper.txt', nil)], fs[0].files)
 
     # Check some more complicated file sets.
-    assert_equal({'fixtures/README.txt' => '{app}/README.txt'}, fs[1].files)
+    assert_equal([FC.new('fixtures/README.txt', '{app}/README.txt')], 
+                 fs[1].files)
     assert_equal(%W(CVS .cvsignore *.bak .\#* \#* *~ ignore\\*\\dir 
                     nested\\dir), 
-                 fs[2].excludes)
-    assert_equal({'fixtures/Media/foo.txt' => '{app}/Media/foo.txt',
-                  'fixtures/Media2/baz.txt' => '{app}/Media/baz.txt',
-                  'fixtures/Media2/sub/w.txt' => '{app}/Media/sub/w.txt'},
+                 fs[3].excludes)
+    assert_equal([FC.new('fixtures/Media/foo.txt', '{app}/Media/foo.txt'),
+                  FC.new('fixtures/Media2/baz.txt', '{app}/Media/baz.txt'),
+                  FC.new('fixtures/Media2/sub/w.txt', '{app}/Media/sub/w.txt')],
                  iss.components['media'].files)
+    assert_equal([FC.new('fixtures/README.txt', '{app}/README.txt'),
+                  FC.new('fixtures/README.txt', '{app}/dir/README.txt')],
+                 iss.components['base'].files)
   end
 
   # Generate a manifest file.
