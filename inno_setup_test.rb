@@ -33,6 +33,7 @@ class InnoSetupTest < Test::Unit::TestCase
 foo
 baz
 external
+versionok
 __EOO__
 #define X 1
 #if X
@@ -60,7 +61,17 @@ nested if shouldn't reactivate
 neither should this
 #endif
 #endif
+#if Ver < 0x10090807
+#error Version too low
+#else
+versionok
+#endif
 __EOI__
+    #' <- fix for Emacs not understanding multiple here docs
+
+    assert_raises RuntimeError do
+      InnoSetup::preprocess "#error This is an error"
+    end
   end
 
   # Make sure we can break a file into sections.

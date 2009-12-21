@@ -321,12 +321,19 @@ module InnoSetup
       when /^#\s*ifndef\s+(\w+)\s*$/
         active_stack.push active
         active = active && !defines.has_key?($1)
+      when /^#\s*if\s+[vV][eE][rR]\s+(<|>)=?\s+0x[0-9a-zA-Z]{8}\s*$/
+        # Allow version checks, but always consider the version to be higher
+        # than the version compared to.
+        active_stack.push active
+        active = active && ($1 == ">")
       when /^#\s*else\s*$/
         # If we have a parent if, and it's inactive, we don't actually
         # want to do anything here.
         active = !active if active_stack.empty? || active_stack.last
       when /^#\s*endif(\s+(\w+))?\s*$/
         active = active_stack.pop
+      when /^#\s*error\s+(.+)$/
+        raise $1 if active
       when /^#.*$/
         raise "Unknown preprocessor command: #{line}"
       else
